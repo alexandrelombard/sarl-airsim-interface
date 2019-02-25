@@ -17,7 +17,13 @@ agent BootAgent {
 
 	on Initialize {
 		spawn(SimulationControllerAgent)
-		Thread.sleep(5000)
+		Thread.sleep(2000)
+		spawn(DroneAgent)
+		Thread.sleep(4000)
+		spawn(DroneAgent)
+		spawn(DroneAgent)
+		Thread.sleep(4000)
+		spawn(DroneAgent)
 		spawn(DroneAgent)
 	}
 }

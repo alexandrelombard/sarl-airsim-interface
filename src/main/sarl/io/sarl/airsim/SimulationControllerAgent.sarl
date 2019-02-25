@@ -16,6 +16,7 @@ import io.sarl.core.Schedules
 import fr.utbm.airsim.api.DrivetrainType
 import fr.utbm.airsim.api.YawMode
 import io.sarl.airsim.influences.MoveByVelocity
+import io.sarl.lang.core.Address
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -26,7 +27,9 @@ import io.sarl.airsim.influences.MoveByVelocity
 agent SimulationControllerAgent {
 	uses Logging, DefaultContextInteractions, Schedules
 	
-	val name = "Alpha"
+	// Temporary solution to manage the affectation of the drones to the agents
+	val availableDrones = newLinkedList("Alpha", "Bravo", "Charly", "Delta", "Echo")
+	val affectedDrones = <Address, String>newHashMap
 
 	val loop = EventLoop.defaultEventLoop()
 
@@ -34,7 +37,7 @@ agent SimulationControllerAgent {
 	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
 
 	on Initialize {
-		multirotorClient.enableApiControl(true, name)
+		//
 	}
 
 	on Destroy {
@@ -42,12 +45,25 @@ agent SimulationControllerAgent {
 	}
 	
 	on Takeoff {
-		multirotorClient.takeoffAsync(20.0f, name)
+		multirotorClient.takeoffAsync(20.0f, affectOrGetDrone(occurrence.source))
 	}
 	
 	on MoveByVelocity {
 		multirotorClient.moveByVelocityAsync(
 			occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
-			new YawMode(), name)
+			new YawMode(), affectOrGetDrone(occurrence.source))
+	}
+	
+	def affectOrGetDrone(address : Address) {
+		var name: String
+		if (!affectedDrones.containsKey(address)) {
+			name = availableDrones.pop()
+			affectedDrones.put(address, name)
+			multirotorClient.enableApiControl(true, name)
+		} else {
+			name = affectedDrones.get(address)
+		}
+			
+		return name
 	}
 }

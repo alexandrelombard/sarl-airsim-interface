@@ -22,8 +22,10 @@ agent DroneAgent {
 	on Initialize {
 		emit(new Takeoff)
 		
-		every(1000) [
-			emit(new MoveByVelocity(0.0f, 0.0f, -2.0f, 1.0f))
+		in(3000) [
+			every(1000) [
+				emit(new MoveByVelocity(1.0f, 0.0f, 0.0f, 1.0f))
+			]	
 		]
 	}
 
