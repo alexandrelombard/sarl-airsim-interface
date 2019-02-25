@@ -1,0 +1,53 @@
+/** 
+ * 
+ */
+package io.sarl.airsim
+
+import io.sarl.core.Destroy
+import io.sarl.core.Initialize
+import io.sarl.core.Logging
+import io.sarl.core.DefaultContextInteractions
+
+import org.msgpack.rpc.Client
+import org.msgpack.rpc.loop.EventLoop
+import fr.utbm.airsim.api.MultirotorClientInterface
+import io.sarl.airsim.influences.Takeoff
+import io.sarl.core.Schedules
+import fr.utbm.airsim.api.DrivetrainType
+import fr.utbm.airsim.api.YawMode
+import io.sarl.airsim.influences.MoveByVelocity
+
+/**
+ * Agent in charge of controlling the simulation, transmitting the influences and
+ * dispatching the perceptions 
+ * @author Alexandre Lombard
+ * 
+ */
+agent SimulationControllerAgent {
+	uses Logging, DefaultContextInteractions, Schedules
+	
+	val name = "Alpha"
+
+	val loop = EventLoop.defaultEventLoop()
+
+	val rpcClient = new Client("127.0.0.1", 41451, loop)
+	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
+
+	on Initialize {
+		multirotorClient.enableApiControl(true, name)
+	}
+
+	on Destroy {
+		//
+	}
+	
+	on Takeoff {
+		multirotorClient.takeoffAsync(20.0f, name)
+	}
+	
+	on MoveByVelocity {
+		multirotorClient.moveByVelocityAsync(
+			occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
+			new YawMode(), name)
+	}
+}

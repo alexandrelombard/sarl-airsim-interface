@@ -1,0 +1,23 @@
+/** 
+ * 
+ */
+package io.sarl.airsim
+
+import io.sarl.core.Initialize
+import io.sarl.core.Lifecycle
+import io.sarl.core.Logging
+
+/** 
+ * Agent in charge of starting the other agents (initial state)
+ * @author Alexandre Lombard
+ * 
+ */
+agent BootAgent {
+	uses Logging, Lifecycle
+
+	on Initialize {
+		spawn(SimulationControllerAgent)
+		Thread.sleep(5000)
+		spawn(DroneAgent)
+	}
+}

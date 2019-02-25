@@ -1,0 +1,33 @@
+/** 
+ * 
+ */
+package io.sarl.airsim
+
+import io.sarl.core.Destroy
+import io.sarl.core.Initialize
+import io.sarl.core.Logging
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.core.Schedules
+import io.sarl.airsim.influences.Takeoff
+import io.sarl.airsim.influences.MoveByVelocity
+
+/** 
+ * Agent in charge of driving a drone
+ * @author Alexandre Lombard
+ * 
+ */
+agent DroneAgent {
+	uses Logging, DefaultContextInteractions, Schedules
+
+	on Initialize {
+		emit(new Takeoff)
+		
+		every(1000) [
+			emit(new MoveByVelocity(0.0f, 0.0f, -2.0f, 1.0f))
+		]
+	}
+
+	on Destroy {
+		//
+	}
+}

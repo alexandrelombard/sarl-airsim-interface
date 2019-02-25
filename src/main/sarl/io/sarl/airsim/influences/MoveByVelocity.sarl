@@ -1,0 +1,22 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.influences
+
+/** 
+ * @author Alexandre Lombard
+ * 
+ */
+event MoveByVelocity {
+	val vx: Float
+	val vy: Float
+	val vz: Float
+	val duration: Float
+	
+	new(vx: Float, vy: Float, vz: Float, duration: Float) {
+		this.vx = vx
+		this.vy = vy
+		this.vz = vz
+		this.duration = duration
+	}
+}

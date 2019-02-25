@@ -1,0 +1,10 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.influences
+
+/** 
+ * @author Alexandre Lombard
+ * 
+ */
+event Takeoff
