@@ -10,6 +10,7 @@ import io.sarl.core.DefaultContextInteractions
 
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
+import fr.utbm.airsim.api.RpcLibClientBase
 import fr.utbm.airsim.api.MultirotorClientInterface
 import io.sarl.airsim.influences.Takeoff
 import io.sarl.core.Schedules
@@ -17,6 +18,7 @@ import fr.utbm.airsim.api.DrivetrainType
 import fr.utbm.airsim.api.YawMode
 import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.lang.core.Address
+import io.sarl.airsim.perceptions.LidarDataPerception
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -35,9 +37,13 @@ agent SimulationControllerAgent {
 
 	val rpcClient = new Client("127.0.0.1", 41451, loop)
 	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
-
+	
 	on Initialize {
-		//
+		every(1000) [
+			affectedDrones
+					.mapValues[ multirotorClient.getLidarData("", it) ]
+					.forEach[k: Address, v | emit(new LidarDataPerception(v)) [occurrence.source == k] ]
+		]
 	}
 
 	on Destroy {

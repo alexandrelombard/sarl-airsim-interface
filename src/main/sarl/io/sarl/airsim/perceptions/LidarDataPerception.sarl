@@ -1,0 +1,19 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.perceptions
+
+import fr.utbm.airsim.api.LidarData
+
+/** 
+ * Event emitted by the simulation controller when lidar data is received
+ * @author Alexandre Lombard
+ * 
+ */
+event LidarDataPerception {
+	val lidarData: LidarData
+	
+	new (lidarData: LidarData) {
+		this.lidarData = lidarData
+	}
+}

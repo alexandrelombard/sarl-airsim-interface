@@ -10,6 +10,7 @@ import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Schedules
 import io.sarl.airsim.influences.Takeoff
 import io.sarl.airsim.influences.MoveByVelocity
+import io.sarl.airsim.perceptions.LidarDataPerception
 
 /** 
  * Agent in charge of driving a drone
@@ -20,6 +21,8 @@ agent DroneAgent {
 	uses Logging, DefaultContextInteractions, Schedules
 
 	on Initialize {
+		info("Drone agent starting...")
+		
 		emit(new Takeoff)
 		
 		in(3000) [
@@ -31,5 +34,9 @@ agent DroneAgent {
 
 	on Destroy {
 		//
+	}
+	
+	on LidarDataPerception {
+		info("I believe I can fly")
 	}
 }
