@@ -3,22 +3,20 @@
  */
 package io.sarl.airsim
 
+import fr.utbm.airsim.api.DrivetrainType
+import fr.utbm.airsim.api.MultirotorClientInterface
+import fr.utbm.airsim.api.YawMode
+import io.sarl.airsim.influences.MoveByVelocity
+import io.sarl.airsim.influences.Takeoff
+import io.sarl.airsim.perceptions.LidarDataPerception
+import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Destroy
 import io.sarl.core.Initialize
 import io.sarl.core.Logging
-import io.sarl.core.DefaultContextInteractions
-
+import io.sarl.core.Schedules
+import io.sarl.lang.core.Address
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
-import fr.utbm.airsim.api.RpcLibClientBase
-import fr.utbm.airsim.api.MultirotorClientInterface
-import io.sarl.airsim.influences.Takeoff
-import io.sarl.core.Schedules
-import fr.utbm.airsim.api.DrivetrainType
-import fr.utbm.airsim.api.YawMode
-import io.sarl.airsim.influences.MoveByVelocity
-import io.sarl.lang.core.Address
-import io.sarl.airsim.perceptions.LidarDataPerception
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -41,8 +39,9 @@ agent SimulationControllerAgent {
 	on Initialize {
 		every(1000) [
 			affectedDrones
-					.mapValues[ multirotorClient.getLidarData("", it) ]
-					.forEach[k: Address, v | emit(new LidarDataPerception(v)) [occurrence.source == k] ]
+					.mapValues[ multirotorClient.getLidarData("Lidar", it) ]
+					.forEach [ k : Address, v |
+				emit(new LidarDataPerception(v)) [it == k] ]
 		]
 	}
 

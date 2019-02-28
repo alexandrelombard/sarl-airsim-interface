@@ -1,0 +1,60 @@
+package io.sarl.airsim.math
+
+import org.eclipse.xtend.lib.annotations.Accessors
+
+/**
+ * Represents a 2D vector
+ * @author Alexandre Lombard
+ */
+class Vector2 {
+	@Accessors(PUBLIC_GETTER)
+	val x : Float
+	@Accessors(PUBLIC_GETTER)
+	val y: Float
+	
+	new() {
+		this.x = 0f
+		this.y = 0f
+	}
+	
+	new (x: Float, y: Float) {
+		this.x = x
+		this.y = y
+	}
+	
+	def operator_plus(v: Vector2) : Vector2 {
+		return new Vector2(x + v.x, y + v.y)
+	}
+	
+	def operator_minus(v: Vector2) : Vector2 {
+		return new Vector2(x - v.x, y - v.y)
+	}
+	
+	def operator_multiply(l: Float) : Vector2 {
+		return new Vector2(x * l, y * l)
+	}
+
+	def operator_multiply(l : Float, v : Vector2) : Vector2 {
+		return new Vector2(v.x * l, v.y * l)
+	}
+	
+	def operator_minus(): Vector2 {
+		return new Vector2(-x, -y)
+	}
+	
+	def toAngle(): Float {
+		return Math.atan2(y, x).floatValue
+	}
+	
+	def squaredNorm() : Float {
+		return x * x + y * y
+	}
+	
+	def norm(): Float {
+		return Math.sqrt(squaredNorm()).floatValue
+	}
+	
+	override toString() : String {
+		return "[" + x + ", " + y + "]"
+	}
+}

@@ -11,6 +11,9 @@ import io.sarl.core.Schedules
 import io.sarl.airsim.influences.Takeoff
 import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.airsim.perceptions.LidarDataPerception
+import io.sarl.airsim.math.Vector2
+import java.util.ArrayList
+import java.util.List
 
 /** 
  * Agent in charge of driving a drone
@@ -19,15 +22,24 @@ import io.sarl.airsim.perceptions.LidarDataPerception
  */
 agent DroneAgent {
 	uses Logging, DefaultContextInteractions, Schedules
+	
+	var direction: Float = 0f
 
 	on Initialize {
 		info("Drone agent starting...")
 		
 		emit(new Takeoff)
 		
+		// Note: X is forward
 		in(3000) [
 			every(1000) [
-				emit(new MoveByVelocity(1.0f, 0.0f, 0.0f, 1.0f))
+				val dir = direction
+				emit(new MoveByVelocity(
+					Math.cos(dir).floatValue,
+					Math.sin(dir).floatValue,
+					0.0f,
+					1.0f
+				))
 			]	
 		]
 	}
@@ -37,6 +49,26 @@ agent DroneAgent {
 	}
 	
 	on LidarDataPerception {
-		info("I believe I can fly")
+		val lidarData = occurrence.lidarData
+		val pointCloud = lidarData.pointCloud
+		val pose = lidarData.pose
+		
+		val repulsionForces: List<Vector2> = new ArrayList<Vector2>(pointCloud.length)
+		
+		// The lidar is supposed to have 1 channel and to get 360 points per second
+		// We compute a repulsion force per point
+		for(var idx = 0; idx < pointCloud.length; idx += 3) {
+			// We ignore points which are not on the drone plane
+			if (Math.abs(pointCloud.get(idx + 2)) < 0.25) {
+				val dirVector = new Vector2(pointCloud.get(idx), pointCloud.get(idx + 1))
+				// We ignore points which are not in front of the drone
+				if(Math.abs(dirVector.toAngle()) < Math.PI.floatValue / 4f)
+					repulsionForces.add(dirVector * (-1.0f / Math.pow(dirVector.norm, 2)).floatValue)	
+			}
+		}
+		
+		val resultingForce = repulsionForces.reduce[p1, p2 | p1 + p2]
+		
+		this.direction = if(resultingForce === null) 0f else resultingForce.toAngle + Math.PI.floatValue / 2f
 	}
 }
