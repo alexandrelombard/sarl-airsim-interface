@@ -1,0 +1,15 @@
+package io.sarl.airsim.perceptions
+
+import fr.utbm.airsim.api.MultirotorState
+
+/**
+ * Represents the perception of the self state of a multirotor
+ * @author Alexandre Lombard
+ */
+event MultirotorStatePerception {
+	val multirotorState: MultirotorState
+	
+	new(multirotorState: MultirotorState) {
+		this.multirotorState = multirotorState
+	}
+}
