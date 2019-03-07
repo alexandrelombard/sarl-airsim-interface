@@ -16,6 +16,7 @@ import java.util.ArrayList
 import java.util.List
 import io.sarl.airsim.perceptions.MultirotorStatePerception
 import io.sarl.airsim.perceptions.sim.SimPosePerception
+import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 
 /** 
  * Agent in charge of driving a drone
@@ -80,5 +81,9 @@ agent DroneAgent {
 	
 	on SimPosePerception {
 		info(occurrence.pose.position.x)
+	}
+	
+	on SimGroundTruthKinematicsPerception {
+		
 	}
 }

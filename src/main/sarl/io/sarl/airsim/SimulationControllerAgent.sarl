@@ -19,6 +19,7 @@ import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
 import io.sarl.airsim.perceptions.MultirotorStatePerception
 import io.sarl.airsim.perceptions.sim.SimPosePerception
+import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -44,19 +45,28 @@ agent SimulationControllerAgent {
 			affectedDrones
 					.mapValues[ multirotorClient.getLidarData("Lidar", it) ]
 					.forEach [ k : Address, v |
-							emit(new LidarDataPerception(v)) [it == k]]
+							emit(new LidarDataPerception(v)) [it == k]
+			]
 				
 			// Fetch the multirotor state info and propagate it
 			affectedDrones
 					.mapValues[ multirotorClient.getMultirotorState(it) ]
 					.forEach [ k : Address, v |
-							emit(new MultirotorStatePerception(v)) [it == k]]
+							emit(new MultirotorStatePerception(v)) [it == k]
+			]
 					
 			// Fetch the sim pose and propagate it
 			affectedDrones
 					.mapValues[ multirotorClient.simGetObjectPose(it) ]
 					.forEach [ k : Address, v |
-							emit(new SimPosePerception(v)) [it == k]]
+							emit(new SimPosePerception(v))[it == k]
+			]
+
+			affectedDrones
+					.mapValues[ multirotorClient.simGetGroundTruthKinematics(it)]
+					.forEach [ k : Address, v |
+							emit(new SimGroundTruthKinematicsPerception(v))[it == k]
+			]	
 			
 		]
 	}

@@ -1,0 +1,19 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.perceptions.sim
+
+import fr.utbm.airsim.api.KinematicsState
+
+/** 
+ * Kinematics perception (note: this is a simulation only perception)
+ * @author Alexandre Lombard
+ * 
+ */
+event SimGroundTruthKinematicsPerception {
+	val state: KinematicsState
+	
+	new(state : KinematicsState) {
+		this.state = state
+	}
+}
