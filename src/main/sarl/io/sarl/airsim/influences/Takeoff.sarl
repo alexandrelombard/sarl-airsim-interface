@@ -4,6 +4,7 @@
 package io.sarl.airsim.influences
 
 /** 
+ * Event emitted by an agent when it wants to take off
  * @author Alexandre Lombard
  * 
  */

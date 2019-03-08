@@ -1,0 +1,121 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.behaviors
+
+import fr.utbm.airsim.api.Vector3r
+import io.sarl.core.Initialize
+import io.sarl.core.Logging
+import io.sarl.airsim.perceptions.sim.SimPosePerception
+import fr.utbm.airsim.api.Pose
+import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
+import fr.utbm.airsim.api.KinematicsState
+import org.eclipse.xtend.lib.annotations.Accessors
+import io.sarl.lang.core.Address
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.airsim.communication.NotifyPose
+import io.sarl.airsim.communication.NotifyKinematics
+
+/** 
+ * Drone behavior: defines a target point (the opposite of the start point) and try to reach this target
+ * Eventually avoids obstacles 
+ * @author Alexandre Lombard
+ * 
+ */
+behavior ReachTargetPoint {
+	
+	var targetPoint: Vector3r = null
+	
+	// region Internal state of the agent
+	var pose: Pose = new Pose()
+	var velocity: Vector3r = new Vector3r()
+	// endregion
+	
+	// region Data about the state of the other agents
+	val neighbours = <Address, DroneState>newHashMap
+	// endregion
+	
+	uses Logging, DefaultContextInteractions
+
+	on Initialize {
+		//
+	}
+
+	on SimPosePerception {
+		// Update the internal pose state and fix the target point if not set
+		synchronized (this.pose) {
+			this.pose = occurrence.pose	
+			
+			if(this.targetPoint === null) {
+				this.targetPoint = new Vector3r(
+					-this.pose.position.x,
+					-this.pose.position.y,
+					-this.pose.position.z)
+			}
+			
+			emit(new NotifyPose(this.pose))
+		}
+	}
+	
+	on SimGroundTruthKinematicsPerception {
+		// Update the internal velocity state
+		synchronized (this.velocity) {
+			this.velocity = occurrence.state.linearVelocity
+			
+			emit(new NotifyKinematics(occurrence.state))
+		}
+	}
+	
+	/**
+	 * When the pose of another agent is received, we register it in the map of neighbours
+	 */
+	on NotifyPose {
+		if(neighbours.containsKey(occurrence.source)) {
+			neighbours.put(occurrence.source, new DroneState(neighbours.get(occurrence.source), occurrence.pose))
+		} else {
+			neighbours.put(occurrence.source, new DroneState(occurrence.pose, null))
+		}
+	}
+	
+	/**
+	 * When the kinematic state of another agent is received, we register it in the map of neighbours
+	 */
+	on NotifyKinematics {
+		if (neighbours.containsKey(occurrence.source)) {
+			neighbours.put(occurrence.source, new DroneState(neighbours.get(occurrence.source), occurrence.state))
+		} else {
+			neighbours.put(occurrence.source, new DroneState(null as Pose, occurrence.state))
+		}
+	}
+	
+	def computeAvoidanceForce(): Vector3r {
+		
+	}
+	
+}
+
+/**
+ * Internal class used to store the state of the other agents
+ * @author Alexandre Lombard
+ */
+class DroneState {
+	@Accessors(PUBLIC_GETTER)
+	val pose : Pose
+	@Accessors(PUBLIC_GETTER)
+	val state: KinematicsState
+	
+	new(pose: Pose, state: KinematicsState) {
+		this.pose = pose
+		this.state = state
+	}
+	
+	new(previousState: DroneState, pose: Pose) {
+		this.pose = pose
+		this.state = previousState.state
+	}
+	
+	new(previousState: DroneState, kinematicsState: KinematicsState) {
+		this.pose = previousState.pose
+		this.state = kinematicsState
+	}
+}

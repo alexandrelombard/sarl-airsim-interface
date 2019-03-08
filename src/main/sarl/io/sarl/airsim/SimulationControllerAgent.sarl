@@ -40,7 +40,7 @@ agent SimulationControllerAgent {
 	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
 	
 	on Initialize {
-		every(1000) [
+		every(250) [
 			// Fetch the lidar data and propagate it
 			affectedDrones
 					.mapValues[ multirotorClient.getLidarData("Lidar", it) ]

@@ -1,0 +1,19 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.influences.sim
+
+import fr.utbm.airsim.api.Pose
+
+/** 
+ * Event emitted by an agent when it wants to set its vehicle pose
+ * @author Alexandre Lombard
+ * 
+ */
+event SetVehiclePose {
+	val pose: Pose
+	
+	new(pose: Pose) {
+		this.pose = pose
+	}
+}

@@ -1,0 +1,20 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.communication
+
+import fr.utbm.airsim.api.Pose
+
+/** 
+ * Event emitted by agent to notify their pose to the other agents.
+ * This event does not directly interact with the simulation
+ * @author Alexandre Lombard
+ * 
+ */
+event NotifyPose {
+	val pose: Pose
+	
+	new (pose: Pose) {
+		this.pose = pose
+	}
+}

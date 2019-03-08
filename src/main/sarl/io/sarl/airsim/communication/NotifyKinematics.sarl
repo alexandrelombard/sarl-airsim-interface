@@ -1,0 +1,20 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.communication
+
+import fr.utbm.airsim.api.KinematicsState
+
+/** 
+ * Event emitted by agent to notify their kinematics state to the other agents.
+ * This event does not directly interact with the simulation
+ * @author Alexandre Lombard
+ * 
+ */
+event NotifyKinematics {
+	val state: KinematicsState
+	
+	new(state: KinematicsState) {
+		this.state = state
+	}
+}

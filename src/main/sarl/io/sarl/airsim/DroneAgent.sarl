@@ -3,20 +3,9 @@
  */
 package io.sarl.airsim
 
-import io.sarl.core.Destroy
+import io.sarl.airsim.behaviors.ForwardWithBasicAvoidance
+import io.sarl.core.Behaviors
 import io.sarl.core.Initialize
-import io.sarl.core.Logging
-import io.sarl.core.DefaultContextInteractions
-import io.sarl.core.Schedules
-import io.sarl.airsim.influences.Takeoff
-import io.sarl.airsim.influences.MoveByVelocity
-import io.sarl.airsim.perceptions.LidarDataPerception
-import io.sarl.airsim.math.Vector2
-import java.util.ArrayList
-import java.util.List
-import io.sarl.airsim.perceptions.MultirotorStatePerception
-import io.sarl.airsim.perceptions.sim.SimPosePerception
-import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 
 /** 
  * Agent in charge of driving a drone
@@ -24,66 +13,9 @@ import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
  * 
  */
 agent DroneAgent {
-	uses Logging, DefaultContextInteractions, Schedules
+	uses Behaviors
 	
-	var direction: Float = 0f
-
-	on Initialize {
-		info("Drone agent starting...")
-		
-		emit(new Takeoff)
-		
-		// Note: X is forward
-		in(3000) [
-			every(1000) [
-				val dir = direction
-				emit(new MoveByVelocity(
-					Math.cos(dir).floatValue,
-					Math.sin(dir).floatValue,
-					0.0f,
-					1.0f
-				))
-			]	
-		]
-	}
-
-	on Destroy {
-		//
-	}
-	
-	on LidarDataPerception {
-		val lidarData = occurrence.lidarData
-		val pointCloud = lidarData.pointCloud
-		val pose = lidarData.pose
-		
-		val repulsionForces: List<Vector2> = new ArrayList<Vector2>(pointCloud.length)
-		
-		// The lidar is supposed to have 1 channel and to get 360 points per second
-		// We compute a repulsion force per point
-		for(var idx = 0; idx < pointCloud.length; idx += 3) {
-			// We ignore points which are not on the drone plane
-			if (Math.abs(pointCloud.get(idx + 2)) < 0.25) {
-				val dirVector = new Vector2(pointCloud.get(idx), pointCloud.get(idx + 1))
-				// We ignore points which are not in front of the drone
-				if(Math.abs(dirVector.toAngle()) < Math.PI.floatValue / 4f)
-					repulsionForces.add(dirVector * (-1.0f / Math.pow(dirVector.norm, 2)).floatValue)	
-			}
-		}
-		
-		val resultingForce = repulsionForces.reduce[p1, p2 | p1 + p2]
-		
-		this.direction = if(resultingForce === null) 0f else resultingForce.toAngle + Math.PI.floatValue / 2f
-	}
-	
-	on MultirotorStatePerception {
-		//info(occurrence.multirotorState.gpsLocation.altitude + " - " + occurrence.multirotorState.collisionInfo.collisionCount)
-	}
-	
-	on SimPosePerception {
-		info(occurrence.pose.position.x)
-	}
-	
-	on SimGroundTruthKinematicsPerception {
-		
+	on Initialize {		
+		registerBehavior(new ForwardWithBasicAvoidance(this))
 	}
 }

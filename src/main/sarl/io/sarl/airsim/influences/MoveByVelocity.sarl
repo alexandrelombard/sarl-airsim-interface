@@ -4,6 +4,7 @@
 package io.sarl.airsim.influences
 
 /** 
+ * Event emitted by an agent when it wants to move
  * @author Alexandre Lombard
  * 
  */
