@@ -6,6 +6,7 @@ package io.sarl.airsim.behaviors
 import fr.utbm.airsim.api.Vector3r
 import io.sarl.core.Initialize
 import io.sarl.core.Logging
+import io.sarl.core.Schedules
 import io.sarl.airsim.perceptions.sim.SimPosePerception
 import fr.utbm.airsim.api.Pose
 import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
@@ -15,6 +16,7 @@ import io.sarl.lang.core.Address
 import io.sarl.core.DefaultContextInteractions
 import io.sarl.airsim.communication.NotifyPose
 import io.sarl.airsim.communication.NotifyKinematics
+import io.sarl.airsim.influences.MoveByVelocity
 
 /** 
  * Drone behavior: defines a target point (the opposite of the start point) and try to reach this target
@@ -37,7 +39,7 @@ behavior ReachTargetPoint {
 	val neighbours = <Address, DroneState>newHashMap
 	// endregion
 	
-	uses Logging, DefaultContextInteractions
+	uses Logging, DefaultContextInteractions, Schedules
 
 	on Initialize {
 		every(periodMs) [
@@ -98,6 +100,7 @@ behavior ReachTargetPoint {
 		// Find among the neighbours if there are potentials obstacles and compute the time to collision
 		val sliding = neighbours
 				.mapValues [ 
+					
 					val selfPosition = this.pose.position
 					val selfDirection = this.velocity
 					val otherPosition = it.pose.position
@@ -111,24 +114,27 @@ behavior ReachTargetPoint {
 						new Vector3r(0f, 0f, 0f)
 					} else {
 						// There may be a collision
+						
 						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2)
-						val coefB = 2 * ((selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y))
+						//val coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
+						var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
+						
 						val coefC = -Math.pow(d, 2)
 						
-						val delta = coefMath.pow(B, 2) - 4f * coefA * coefC
-						val t = (-coefB + Math.sqrt(delta)) / (2 * coefA)
-
+						val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
+						val t = ((-coefB + Math.sqrt(delta)) / (2 * coefA)).floatValue
+						
 						val selfClosePosition = new Vector3r(selfPosition.x + selfDirection.x, selfPosition.y + selfDirection.y * t, t)
 						val otherClosePosition = new Vector3r(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, t)
-
+						
 						val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
 						val slidingDirection = new Vector3r(-obstacleCloseDirection.y, obstacleCloseDirection.x, 0)
-
+						
 						val sigma = 1f
 						val phi = 2f
 						val tmax = 5f
-						val slidingScale = sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)
-
+						val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
+						
 						if(obstacleCloseDirection.y * targetPoint.x + slidingDirection.y * targetPoint.y >= 0) {
 							slidingDirection.times(slidingScale)
 						} else {
@@ -139,8 +145,8 @@ behavior ReachTargetPoint {
 
 		val w = 1f
 		val alpha = 1f
-		val delta = Math.exp(-alpha / repulsion.length())
-		val attraction = targetPoint.minus(selfDirection).times(w * delta)
+		val delta = Math.exp(-alpha / sliding.length())
+		val attraction = targetPoint.minus(this.pose.position).times((w * delta).floatValue)
 
 		return sliding.plus(attraction)
 	}
