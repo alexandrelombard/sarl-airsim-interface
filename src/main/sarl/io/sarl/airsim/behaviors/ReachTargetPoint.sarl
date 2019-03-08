@@ -89,7 +89,32 @@ behavior ReachTargetPoint {
 	}
 	
 	def computeAvoidanceForce(): Vector3r {
+		// Find among the neighbours if there are potentials obstacles and compute the time to collision
+		return neighbours
+				.mapValues [ 
+					val selfPosition = this.pose.position
+					val selfDirection = this.velocity
+					val otherPosition = it.pose.position
+					val otherDirection = it.state.linearVelocity
+					
+					val d = Math.abs(otherPosition.minus(selfPosition).cross(new Vector3r(selfDirection.x, selfDirection.y, 1)).dot(new Vector3r(otherDirection.x, otherDirection.y, 1))) /
+							(new Vector3r(selfDirection.x, selfDirection.y, 1).cross(new Vector3r(otherDirection.x, otherDirection.y, 1)).length())
+							
+					val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2)
+					val coefB = 2 * ((selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y))
+					val coefC = -Math.pow(d, 2)
+					
+					val delta = coefMath.pow(B, 2) - 4 * coefA * coefC
+					val t = (-coefB + Math.sqrt(delta)) / (2 * coefA)
+					
+					if(d > 0.5) new Vector3r(0f, 0f, 0f) else TODO
+					val force = new Vector3r(0f, 0f, 0f)
+					
+					force
+				].values.reduce[p1, p2 | new Vector3r(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
 		
+
+		new Vector3r()
 	}
 	
 }

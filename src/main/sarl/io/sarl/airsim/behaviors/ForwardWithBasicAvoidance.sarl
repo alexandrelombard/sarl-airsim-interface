@@ -3,25 +3,19 @@
  */
 package io.sarl.airsim.behaviors
 
-import io.sarl.core.AgentKilled
-import io.sarl.core.AgentSpawned
-import io.sarl.core.ContextJoined
-import io.sarl.core.ContextLeft
+import fr.utbm.airsim.api.Pose
+import io.sarl.airsim.influences.MoveByVelocity
+import io.sarl.airsim.influences.Takeoff
+import io.sarl.airsim.math.Vector2
+import io.sarl.airsim.perceptions.LidarDataPerception
+import io.sarl.airsim.perceptions.sim.SimPosePerception
+import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Destroy
 import io.sarl.core.Initialize
 import io.sarl.core.Logging
-import io.sarl.core.MemberJoined
-import io.sarl.core.MemberLeft
-import io.sarl.airsim.perceptions.LidarDataPerception
-import java.util.List
-import io.sarl.airsim.math.Vector2
-import java.util.ArrayList
-import io.sarl.airsim.influences.Takeoff
-import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Schedules
-import io.sarl.airsim.influences.MoveByVelocity
-import io.sarl.airsim.perceptions.sim.SimPosePerception
-import fr.utbm.airsim.api.Pose
+import java.util.ArrayList
+import java.util.List
 
 /** 
  * Make a drone agent goes forward with a basic obstacle avoidance behavior
