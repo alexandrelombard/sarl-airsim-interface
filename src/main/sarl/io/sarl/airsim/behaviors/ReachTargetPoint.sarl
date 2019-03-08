@@ -24,6 +24,8 @@ import io.sarl.airsim.communication.NotifyKinematics
  */
 behavior ReachTargetPoint {
 	
+	private val periodMs = 100
+
 	var targetPoint: Vector3r = null
 	
 	// region Internal state of the agent
@@ -38,7 +40,11 @@ behavior ReachTargetPoint {
 	uses Logging, DefaultContextInteractions
 
 	on Initialize {
-		//
+		every(periodMs) [
+			val movementForce = computeForce()
+
+			emit(new MoveByVelocity(movementForce.x, movementForce.y, 0.0f, periodMs / 1000.0f))
+		]
 	}
 
 	on SimPosePerception {
@@ -88,9 +94,9 @@ behavior ReachTargetPoint {
 		}
 	}
 	
-	def computeAvoidanceForce(): Vector3r {
+	def computeForce(): Vector3r {
 		// Find among the neighbours if there are potentials obstacles and compute the time to collision
-		return neighbours
+		val sliding = neighbours
 				.mapValues [ 
 					val selfPosition = this.pose.position
 					val selfDirection = this.velocity
@@ -99,22 +105,44 @@ behavior ReachTargetPoint {
 					
 					val d = Math.abs(otherPosition.minus(selfPosition).cross(new Vector3r(selfDirection.x, selfDirection.y, 1)).dot(new Vector3r(otherDirection.x, otherDirection.y, 1))) /
 							(new Vector3r(selfDirection.x, selfDirection.y, 1).cross(new Vector3r(otherDirection.x, otherDirection.y, 1)).length())
-							
-					val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2)
-					val coefB = 2 * ((selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y))
-					val coefC = -Math.pow(d, 2)
 					
-					val delta = coefMath.pow(B, 2) - 4 * coefA * coefC
-					val t = (-coefB + Math.sqrt(delta)) / (2 * coefA)
-					
-					if(d > 0.5) new Vector3r(0f, 0f, 0f) else TODO
-					val force = new Vector3r(0f, 0f, 0f)
-					
-					force
-				].values.reduce[p1, p2 | new Vector3r(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
-		
+					if(d > 0.5) {
+						// The minimal distance will be above 0.5 so there won't be a collision
+						new Vector3r(0f, 0f, 0f)
+					} else {
+						// There may be a collision
+						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2)
+						val coefB = 2 * ((selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y))
+						val coefC = -Math.pow(d, 2)
+						
+						val delta = coefMath.pow(B, 2) - 4f * coefA * coefC
+						val t = (-coefB + Math.sqrt(delta)) / (2 * coefA)
 
-		new Vector3r()
+						val selfClosePosition = new Vector3r(selfPosition.x + selfDirection.x, selfPosition.y + selfDirection.y * t, t)
+						val otherClosePosition = new Vector3r(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, t)
+
+						val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
+						val slidingDirection = new Vector3r(-obstacleCloseDirection.y, obstacleCloseDirection.x, 0)
+
+						val sigma = 1f
+						val phi = 2f
+						val tmax = 5f
+						val slidingScale = sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)
+
+						if(obstacleCloseDirection.y * targetPoint.x + slidingDirection.y * targetPoint.y >= 0) {
+							slidingDirection.times(slidingScale)
+						} else {
+							slidingDirection.times(-slidingScale)
+						}
+					}
+				].values.reduce[p1, p2 | new Vector3r(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
+
+		val w = 1f
+		val alpha = 1f
+		val delta = Math.exp(-alpha / repulsion.length())
+		val attraction = targetPoint.minus(selfDirection).times(w * delta)
+
+		return sliding.plus(attraction)
 	}
 	
 }
