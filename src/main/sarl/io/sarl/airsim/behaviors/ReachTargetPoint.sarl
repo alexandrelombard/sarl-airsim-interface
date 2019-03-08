@@ -145,7 +145,7 @@ behavior ReachTargetPoint {
 
 		val w = 1f
 		val alpha = 1f
-		val delta = Math.exp(-alpha / sliding.length())
+		val delta = if(sliding === null) 1f else Math.exp(-alpha / sliding.length())
 		val attraction = targetPoint.minus(this.pose.position).times((w * delta).floatValue)
 
 		return sliding.plus(attraction)

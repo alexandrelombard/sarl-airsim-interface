@@ -6,6 +6,7 @@ package io.sarl.airsim
 import io.sarl.airsim.behaviors.ForwardWithBasicAvoidance
 import io.sarl.core.Behaviors
 import io.sarl.core.Initialize
+import io.sarl.airsim.behaviors.ReachTargetPoint
 
 /** 
  * Agent in charge of driving a drone
@@ -16,6 +17,7 @@ agent DroneAgent {
 	uses Behaviors
 	
 	on Initialize {		
-		registerBehavior(new ForwardWithBasicAvoidance(this))
+		//registerBehavior(new ForwardWithBasicAvoidance(this))
+		registerBehavior(new ReachTargetPoint(this))
 	}
 }
