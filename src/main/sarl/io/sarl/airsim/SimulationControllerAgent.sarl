@@ -40,34 +40,27 @@ agent SimulationControllerAgent {
 	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
 	
 	on Initialize {
-		every(250) [
-			// Fetch the lidar data and propagate it
-			affectedDrones
-					.mapValues[ multirotorClient.getLidarData("Lidar", it) ]
-					.forEach [ k : Address, v |
-							emit(new LidarDataPerception(v)) [it == k]
-			]
-				
-			// Fetch the multirotor state info and propagate it
-			affectedDrones
-					.mapValues[ multirotorClient.getMultirotorState(it) ]
-					.forEach [ k : Address, v |
-							emit(new MultirotorStatePerception(v)) [it == k]
-			]
-					
-			// Fetch the sim pose and propagate it
-			affectedDrones
-					.mapValues[ multirotorClient.simGetObjectPose(it) ]
-					.forEach [ k : Address, v |
-							emit(new SimPosePerception(v))[it == k]
-			]
+		every(100) [
+			synchronized (this) {
+				// Fetch the lidar data and propagate it
+				affectedDrones.mapValues[multirotorClient.getLidarData("Lidar", it)].forEach [ k : Address, v |
+					emit(new LidarDataPerception(v))[it == k]
+				]
 
-			affectedDrones
-					.mapValues[ multirotorClient.simGetGroundTruthKinematics(it)]
-					.forEach [ k : Address, v |
-							emit(new SimGroundTruthKinematicsPerception(v))[it == k]
-			]	
-			
+				// Fetch the multirotor state info and propagate it
+				affectedDrones.mapValues[multirotorClient.getMultirotorState(it)].forEach [ k : Address, v |
+					emit(new MultirotorStatePerception(v))[it == k]
+				]
+
+				// Fetch the sim pose and propagate it
+				affectedDrones.mapValues[ multirotorClient.simGetObjectPose(it)].forEach [ k : Address, v |
+					emit(new SimPosePerception(v))[it == k]
+				]
+
+				affectedDrones.mapValues[multirotorClient.simGetGroundTruthKinematics(it)].forEach [ k : Address, v |
+					emit(new SimGroundTruthKinematicsPerception(v))[it == k]
+				]
+			}
 		]
 	}
 
@@ -85,10 +78,11 @@ agent SimulationControllerAgent {
 			new YawMode(), affectOrGetDrone(occurrence.source))
 	}
 	
-	def affectOrGetDrone(address : Address) {
+	synchronized def affectOrGetDrone(address : Address) {
 		var name: String
 		if (!affectedDrones.containsKey(address)) {
 			name = availableDrones.pop()
+			info("Received affectation: " + address.UUID + " - " + name)
 			affectedDrones.put(address, name)
 			multirotorClient.enableApiControl(true, name)
 		} else {
