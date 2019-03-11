@@ -131,10 +131,11 @@ behavior ReachTargetPoint {
 			return new Vector3r()
 			
 		// Find among the neighbours if there are potentials obstacles and compute the time to collision
-		val sliding = neighbours
+		var sliding = neighbours
 				.filter [ k, v | v.pose !== null && v.state !== null ]
 				.mapValues [
 					val selfPosition = new Vector3r(position.x, position.y, 0f) // We ignore Z
+					val selfDirection = this.velocity
 					val otherPosition = new Vector3r(it.pose.position.x, it.pose.position.y, 0f) // We ignore Z
 					
 					if(Float.isNaN(otherPosition.x) || Float.isNaN(selfPosition.x))
@@ -144,10 +145,13 @@ behavior ReachTargetPoint {
 					
 					if(directionToObstacle.length() > 10f)
 						return new Vector3r()		// Too far
+						
+					if (otherPosition.minus(selfPosition).normalized().dot(selfDirection.normalized()) < 0.5f)
+						return new Vector3r()		// Not in front
 					
 					val normalToObstacle = new Vector3r(-directionToObstacle.y, directionToObstacle.x, 0f)
-					
-					return normalToObstacle.times(1f / Math.pow(directionToObstacle.length(), 2.0).floatValue)
+					val slidingForce = normalToObstacle.times(1f / Math.pow(directionToObstacle.length(), 2.0).floatValue) 
+					return new Vector3r(slidingForce.x, -slidingForce.y, slidingForce.z)
 					
 // In theory the good solution, estimating the impact point...					
 //					val selfPosition = new Vector3r(position.x, position.y, 0f)	// We ignore Z
@@ -210,19 +214,24 @@ behavior ReachTargetPoint {
 //						}
 //					}
 				].values.reduce[p1, p2 | new Vector3r(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
+				
+		if(sliding === null)
+			sliding = new Vector3r(0f, 0f, 0f)
 
 		val w = 1f
 		val alpha = 1f
-		val delta = if(sliding === null) 1f else if (sliding.length() < 1e-7f) 1f else 1f - Math.exp(-alpha / sliding.length())
+		val delta = if (sliding.length() < 1e-7f) 1f else 1f - Math.exp(-alpha / sliding.length())
 		val attraction = targetPoint.minus(position).times((w * delta).floatValue)
-		val targetDirection = targetPoint.minus(position).normalized().times(10)
+		val targetDirection = targetPoint.minus(position)
+		val scaledTargetDirection = targetDirection.normalized().times(10)
 		
 		val result =
-				if (sliding === null || sliding.length() < 1e-3f)
-					targetDirection
+				if (sliding === null || sliding.length() < 1e-1f)
+					scaledTargetDirection
 				else
-					sliding.normalized().times(targetDirection.length() / 4f).plus(targetDirection)
-		//val result = if(sliding === null) attraction else sliding.plus(attraction)
+					sliding.normalized().times(scaledTargetDirection.length() / 2f).plus(scaledTargetDirection)
+
+		// val result = if(sliding === null) attraction else sliding.plus(attraction)
 		//val result = attraction
 
 		//info("Attraction: " + attraction.x + ", " + attraction.y + ", " + attraction.z)
