@@ -133,86 +133,68 @@ behavior ReachTargetPoint {
 		// Find among the neighbours if there are potentials obstacles and compute the time to collision
 		var sliding = neighbours
 				.filter [ k, v | v.pose !== null && v.state !== null ]
-				.mapValues [
-					val selfPosition = new Vector3r(position.x, position.y, 0f) // We ignore Z
+				.mapValues [			
+					val selfPosition = new Vector3r(position.x, position.y, 0f)	// We ignore Z
 					val selfDirection = this.velocity
-					val otherPosition = new Vector3r(it.pose.position.x, it.pose.position.y, 0f) // We ignore Z
+					val otherPosition = new Vector3r(it.pose.position.x, it.pose.position.y, 0f)	// We ignore Z
+					val otherDirection = it.state.linearVelocity
 					
-					if(Float.isNaN(otherPosition.x) || Float.isNaN(selfPosition.x))
+					// If some data are erroneous, we ignore them
+					if(Float.isNaN(otherPosition.x) || Float.isNaN(selfPosition.x) || Float.isNaN(otherDirection.x) || Float.isNaN(selfDirection.x))
 						return new Vector3r()
+					
+					var d = Math.abs(otherPosition.minus(selfPosition).cross(new Vector3r(selfDirection.x, selfDirection.y, 1)).dot(new Vector3r(otherDirection.x, otherDirection.y, 1))) /
+							(new Vector3r(selfDirection.x, selfDirection.y, 1).cross(new Vector3r(otherDirection.x, otherDirection.y, 1)).length())
 
-					val directionToObstacle = selfPosition.minus(otherPosition)
-					
-					if(directionToObstacle.length() > 10f)
-						return new Vector3r()		// Too far
+					if(Double.isNaN(d)) {
+						// If d is NaN it means that the direction are colinear
+						// If so, the distance between the lines is the distance of a point from a line to a point
+						// of the other line 
+						val u = new Vector3r(otherDirection.x, otherDirection.y, 1f)
+						d = selfPosition.minus(otherPosition).cross(u).length() / u.length()
 						
-					if (otherPosition.minus(selfPosition).normalized().dot(selfDirection.normalized()) < 0.5f)
-						return new Vector3r()		// Not in front
+						if(Double.isNaN(d)) d = 0.0f
+					}
 					
-					val normalToObstacle = new Vector3r(-directionToObstacle.y, directionToObstacle.x, 0f)
-					val slidingForce = normalToObstacle.times(1f / Math.pow(directionToObstacle.length(), 2.0).floatValue) 
-					return new Vector3r(slidingForce.x, -slidingForce.y, slidingForce.z)
-					
-// In theory the good solution, estimating the impact point...					
-//					val selfPosition = new Vector3r(position.x, position.y, 0f)	// We ignore Z
-//					val selfDirection = this.velocity
-//					val otherPosition = new Vector3r(it.pose.position.x, it.pose.position.y, 0f)	// We ignore Z
-//					val otherDirection = it.state.linearVelocity
-//					
-//					// If some data are erroneous, we ignore them
-//					if(Float.isNaN(otherPosition.x) || Float.isNaN(selfPosition.x) || Float.isNaN(otherDirection.x) || Float.isNaN(selfDirection.x))
-//						return new Vector3r()
-//					
-//					var d = Math.abs(otherPosition.minus(selfPosition).cross(new Vector3r(selfDirection.x, selfDirection.y, 1)).dot(new Vector3r(otherDirection.x, otherDirection.y, 1))) /
-//							(new Vector3r(selfDirection.x, selfDirection.y, 1).cross(new Vector3r(otherDirection.x, otherDirection.y, 1)).length())
-//
-//					if(Double.isNaN(d)) {
-//						// If d is NaN it means that the direction are colinear
-//						// If so, the distance between the lines is the distance of a point from a line to a point
-//						// of the other line 
-//						val u = new Vector3r(otherDirection.x, otherDirection.y, 1f)
-//						d = selfPosition.minus(otherPosition).cross(u).length() / u.length()
-//						
-//						if(Double.isNaN(d)) d = 0.0f
-//					}
-//					
-//					if(d > 0.5) {
-//						// The minimal distance will be above 0.5 so there won't be a collision
-//						new Vector3r(0f, 0f, 0f)
-//					} else {
-//						// There may be a collision
-//						
-//						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2)
-//						//val coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
-//						var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
-//						
-//						val coefC = -Math.pow(d, 2)
-//						
-//						val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
-//						val t = ((-coefB + Math.sqrt(delta)) / (2 * coefA)).floatValue
-//						
-//						if(t < 1e-7f)
-//							return new Vector3r() // Too late, we ignore to avoid errors further
-//						
-//						val selfClosePosition = new Vector3r(selfPosition.x + selfDirection.x, selfPosition.y + selfDirection.y * t, t)
-//						val otherClosePosition = new Vector3r(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, t)
-//						
-//						val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
-//						val slidingDirection = new Vector3r(-obstacleCloseDirection.y, obstacleCloseDirection.x, 0)
-//						
-//						val sigma = 1f
-//						val phi = 2f
-//						val tmax = 10f
-//						val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
-//						
-//						info("Time-to-collision: " + t)
-//						
-//						if (obstacleCloseDirection.y * targetPoint.x + slidingDirection.y * targetPoint.y >= 0) {
-//							slidingDirection.times(slidingScale)
-//						} else {
-//							slidingDirection.times(-slidingScale)
-//						}
-//					}
+					if(d > 0.5) {
+						// The minimal distance will be above 0.5 so there won't be a collision
+						new Vector3r(0f, 0f, 0f)
+					} else {
+						// There may be a collision
+						
+						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2)
+						//val coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
+						var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
+						
+						val coefC = -Math.pow(d, 2)
+						
+						val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
+						val t = ((-coefB + Math.sqrt(delta)) / (2 * coefA)).floatValue
+						
+						if(t < 1e-3f)
+							return new Vector3r() // Too late, we ignore to avoid errors further
+						
+						val selfClosePosition = new Vector3r(selfPosition.x + selfDirection.x, selfPosition.y + selfDirection.y * t, t)
+						val otherClosePosition = new Vector3r(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, t)
+						
+						val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
+						val slidingDirection = new Vector3r(-obstacleCloseDirection.y, obstacleCloseDirection.x, 0)
+						
+						val sigma = 1f
+						val phi = 2f
+						val tmax = 5f
+						//val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
+						val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
+						
+						info("Time-to-collision: " + t + ", Sliding scale: " + slidingScale)
+						
+						if (obstacleCloseDirection.y * targetPoint.x + slidingDirection.y * targetPoint.y >= 0) {
+							slidingDirection.times(-slidingScale)
+						} else {
+							slidingDirection.times(slidingScale)
+						}
+						//slidingDirection.times(slidingScale)
+					}
 				].values.reduce[p1, p2 | new Vector3r(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
 				
 		if(sliding === null)
@@ -221,17 +203,10 @@ behavior ReachTargetPoint {
 		val w = 1f
 		val alpha = 1f
 		val delta = if (sliding.length() < 1e-7f) 1f else 1f - Math.exp(-alpha / sliding.length())
-		val attraction = targetPoint.minus(position).times((w * delta).floatValue)
 		val targetDirection = targetPoint.minus(position)
-		val scaledTargetDirection = targetDirection.normalized().times(10)
-		
-		val result =
-				if (sliding === null || sliding.length() < 1e-1f)
-					scaledTargetDirection
-				else
-					sliding.normalized().times(scaledTargetDirection.length() / 2f).plus(scaledTargetDirection)
+		val attraction = targetDirection.times((w * delta).floatValue)
 
-		// val result = if(sliding === null) attraction else sliding.plus(attraction)
+		val result = if(sliding === null) attraction else sliding.times(50f).plus(attraction)
 		//val result = attraction
 
 		//info("Attraction: " + attraction.x + ", " + attraction.y + ", " + attraction.z)
@@ -240,10 +215,71 @@ behavior ReachTargetPoint {
 
 		return result 
 	}
-	
+
+	def computeForceSimple() : Vector3r {
+		// Checking pre-conditions
+		if (this.pose === null)
+			return new Vector3r()
+
+		if (this.targetPoint === null)
+			return new Vector3r()
+
+		if (this.velocity === null)
+			return new Vector3r()
+
+		// Storing references to avoid async changes
+		val targetPoint = this.targetPoint
+		val position = this.pose.position
+
+		// Checking values
+		if (Double.isNaN(targetPoint.x) || Double.isNaN(position.x))
+			return new Vector3r()
+
+		// If the drone is within a given radius around its target point, we stop moving (note: this will oscillate
+		// due to inertia)
+		if (targetPoint.minus(position).length() < targetRadius)
+			return new Vector3r()
+
+		// Find among the neighbours if there are potentials obstacles and compute the time to collision
+		var sliding = neighbours.filter[k, v|v.pose !== null && v.state !== null]
+			.mapValues [
+				val selfPosition = new Vector3r(position.x, position.y, 0f) // We ignore Z
+						val selfDirection = this.velocity
+				val otherPosition = new Vector3r(it.pose.position.x, it.pose.position.y, 0f) // We ignore Z
+				if(Float.isNaN(otherPosition.x) || Float.isNaN(selfPosition.x))
+					return new Vector3r()
+
+				val directionToObstacle = selfPosition.minus(otherPosition)
+
+				if (directionToObstacle.length() > 10f)
+					return new Vector3r() // Too far
+				if (otherPosition.minus(selfPosition).normalized().dot(selfDirection.normalized()) < 0.5f)
+					return new Vector3r() // Not in front
+				val normalToObstacle = new Vector3r(-directionToObstacle.y, directionToObstacle.x, 0f)
+				val slidingForce = normalToObstacle.times(1f / Math.pow(directionToObstacle.length(), 2.0).floatValue)
+				return new Vector3r(slidingForce.x, -slidingForce.y, slidingForce.z)
+			].values.reduce[p1, p2|new Vector3r(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
+
+		if (sliding === null)
+			sliding = new Vector3r(0f, 0f, 0f)
+
+		val w = 1f
+		val alpha = 1f
+		val delta = if(sliding.length() < 1e-7f) 1f else 1f - Math.exp(-alpha / sliding.length())
+		val attraction = targetPoint.minus(position).times((w * delta).floatValue)
+		val targetDirection = targetPoint.minus(position)
+		val scaledTargetDirection = targetDirection.normalized().times(10)
+
+		val result = if (sliding === null || sliding.length() < 1e-1f)
+				scaledTargetDirection
+			else
+				sliding.normalized().times(scaledTargetDirection.length() / 2f).plus(scaledTargetDirection)
+
+		return result
+	}
 }
 
-/**
+/** 
  * Internal class used to store the state of the other agents
  * @author Alexandre Lombard
  */
@@ -251,9 +287,9 @@ class DroneState {
 	@Accessors(PUBLIC_GETTER)
 	val pose : Pose
 	@Accessors(PUBLIC_GETTER)
-	val state: KinematicsState
-	
-	new(pose: Pose, state: KinematicsState) {
+	val state : KinematicsState
+
+	new(pose : Pose, state: KinematicsState) {
 		this.pose = pose
 		this.state = state
 	}
