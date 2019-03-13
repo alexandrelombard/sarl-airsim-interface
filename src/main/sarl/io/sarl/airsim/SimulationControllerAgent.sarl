@@ -31,7 +31,8 @@ agent SimulationControllerAgent {
 	uses Logging, DefaultContextInteractions, Schedules
 	
 	// Temporary solution to manage the affectation of the drones to the agents
-	val availableDrones = newLinkedList("Alpha", "Bravo", "Charly", "Delta", "Echo")
+	//val availableDrones = newLinkedList("Alpha", "Bravo", "Charly", "Delta", "Echo")
+	val availableDrones = newLinkedList("Alpha", "Charly", "Bravo", "Delta", "Echo")
 	val affectedDrones = <Address, String>newHashMap
 
 	val loop = EventLoop.defaultEventLoop()

@@ -29,6 +29,7 @@ behavior ReachTargetPoint {
 	
 	private val targetRadius = 0.5f
 	private val periodMs = 100
+	private val avoidanceRadius = 1.5f
 
 	var targetPoint: Vector3r = null
 	
@@ -156,8 +157,8 @@ behavior ReachTargetPoint {
 						if(Double.isNaN(d)) d = 0.0f
 					}
 					
-					if(d > 0.5) {
-						// The minimal distance will be above 0.5 so there won't be a collision
+					if(d > avoidanceRadius) {
+						// The minimal distance will be above the avoidance radius so there won't be a collision
 						new Vector3r(0f, 0f, 0f)
 					} else {
 						// There may be a collision
@@ -169,16 +170,24 @@ behavior ReachTargetPoint {
 						val coefC = -Math.pow(d, 2)
 						
 						val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
-						val t = ((-coefB + Math.sqrt(delta)) / (2 * coefA)).floatValue
-						
+						val t = ((-coefB + Math.sqrt(delta)) / (2 * coefA) / 2).floatValue	// Note: I'm dividing by two but I don't know why
+	
 						if(t < 1e-3f)
 							return new Vector3r() // Too late, we ignore to avoid errors further
 						
-						val selfClosePosition = new Vector3r(selfPosition.x + selfDirection.x, selfPosition.y + selfDirection.y * t, t)
+						val selfClosePosition = new Vector3r(selfPosition.x + selfDirection.x * t, selfPosition.y + selfDirection.y * t, t)
 						val otherClosePosition = new Vector3r(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, t)
+
+						info("---\n" + selfPosition.x + ", " + selfPosition.y + " ; " + selfDirection.x + ", " + selfDirection.y + "\n" +
+								otherPosition.x + ", " + otherPosition.y + " ; " + otherDirection.x + ", " + otherDirection.y)
 						
-						val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
-						val slidingDirection = new Vector3r(-obstacleCloseDirection.y, obstacleCloseDirection.x, 0)
+						val obstacleDirection = otherClosePosition.minus(selfPosition).normalized()
+						//val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
+						
+						if(targetPoint.minus(selfPosition).dot(obstacleDirection) < 0.0f)
+							return new Vector3r()
+						
+						val slidingDirection = new Vector3r(-obstacleDirection.y, obstacleDirection.x, 0)
 						
 						val sigma = 1f
 						val phi = 2f
@@ -186,13 +195,22 @@ behavior ReachTargetPoint {
 						//val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
 						val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
 						
-						info("Time-to-collision: " + t + ", Sliding scale: " + slidingScale)
+						info("TTC: " + t + ", d: " + d + ", Sliding scale: " + slidingScale + ", Dot: " +
+								targetPoint.minus(selfPosition).dot(obstacleDirection) + ", Obstacle: (" + otherClosePosition.x + ", " + otherClosePosition.y + ")")
+
+						//val z = (targetPoint.x - selfPosition.x) * obstacleCloseDirection.y - (targetPoint.y - selfPosition.y) * obstacleCloseDirection.x
+						//val z = (selfDirection.x) * obstacleCloseDirection.y - (selfDirection.y) * obstacleCloseDirection.x
+						//val sign = if(z > 0.0) 1 else -1
+						//val sign = if(targetPoint.minus(selfPosition).dot(obstacleDirection) < 0) -1 else 1
+						val sign = 1
+
+						slidingDirection.times(sign)
 						
-						if (obstacleCloseDirection.y * targetPoint.x + slidingDirection.y * targetPoint.y >= 0) {
-							slidingDirection.times(-slidingScale)
-						} else {
-							slidingDirection.times(slidingScale)
-						}
+						//if (obstacleCloseDirection.y * targetPoint.x + slidingDirection.y * targetPoint.y >= 0) {
+						//	slidingDirection.times(-slidingScale)
+						//} else {
+						//	slidingDirection.times(slidingScale)
+						//}
 						//slidingDirection.times(slidingScale)
 					}
 				].values.reduce[p1, p2 | new Vector3r(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
@@ -200,13 +218,13 @@ behavior ReachTargetPoint {
 		if(sliding === null)
 			sliding = new Vector3r(0f, 0f, 0f)
 
-		val w = 1f
-		val alpha = 1f
+		val w = 10f
+		val alpha = 2f
 		val delta = if (sliding.length() < 1e-7f) 1f else 1f - Math.exp(-alpha / sliding.length())
-		val targetDirection = targetPoint.minus(position)
+		val targetDirection = targetPoint.minus(position).normalized()
 		val attraction = targetDirection.times((w * delta).floatValue)
 
-		val result = if(sliding === null) attraction else sliding.times(50f).plus(attraction)
+		val result = if(sliding === null) attraction else sliding.times(5f).plus(attraction)
 		//val result = attraction
 
 		//info("Attraction: " + attraction.x + ", " + attraction.y + ", " + attraction.z)
