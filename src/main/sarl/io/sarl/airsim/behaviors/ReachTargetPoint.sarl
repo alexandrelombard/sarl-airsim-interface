@@ -195,8 +195,8 @@ behavior ReachTargetPoint {
 						//val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
 						val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
 						
-						info("TTC: " + t + ", d: " + d + ", Sliding scale: " + slidingScale + ", Dot: " +
-								targetPoint.minus(selfPosition).dot(obstacleDirection) + ", Obstacle: (" + otherClosePosition.x + ", " + otherClosePosition.y + ")")
+						//info("TTC: " + t + ", d: " + d + ", Sliding scale: " + slidingScale + ", Dot: " +
+						//		targetPoint.minus(selfPosition).dot(obstacleDirection) + ", Obstacle: (" + otherClosePosition.x + ", " + otherClosePosition.y + ")")
 
 						//val z = (targetPoint.x - selfPosition.x) * obstacleCloseDirection.y - (targetPoint.y - selfPosition.y) * obstacleCloseDirection.x
 						//val z = (selfDirection.x) * obstacleCloseDirection.y - (selfDirection.y) * obstacleCloseDirection.x
