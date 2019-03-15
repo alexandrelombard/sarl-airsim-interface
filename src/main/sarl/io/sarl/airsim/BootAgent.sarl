@@ -19,10 +19,10 @@ agent BootAgent {
 		spawn(SimulationControllerAgent)
 		Thread.sleep(2000)
 		spawn(DroneAgent)
-		Thread.sleep(4000)
+		Thread.sleep(3000)
 		spawn(DroneAgent)
 		spawn(DroneAgent)
-		Thread.sleep(2000)
+		Thread.sleep(1000)
 		spawn(DroneAgent)
 		//spawn(DroneAgent)
 	}

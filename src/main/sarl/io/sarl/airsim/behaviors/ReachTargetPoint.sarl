@@ -89,10 +89,12 @@ behavior ReachTargetPoint {
 	 * When the pose of another agent is received, we register it in the map of neighbours
 	 */
 	on NotifyPose [ !isMe(occurrence.source) ] {
-		if(neighbours.containsKey(occurrence.source)) {
-			neighbours.put(occurrence.source, new DroneState(neighbours.get(occurrence.source), occurrence.pose))
-		} else {
-			neighbours.put(occurrence.source, new DroneState(occurrence.pose, null))
+		synchronized(this.neighbours) {
+			if(neighbours.containsKey(occurrence.source)) {
+				neighbours.put(occurrence.source, new DroneState(neighbours.get(occurrence.source), occurrence.pose))
+			} else {
+				neighbours.put(occurrence.source, new DroneState(occurrence.pose, null))
+			}
 		}
 	}
 	
@@ -100,10 +102,12 @@ behavior ReachTargetPoint {
 	 * When the kinematic state of another agent is received, we register it in the map of neighbours
 	 */
 	on NotifyKinematics [ !isMe(occurrence.source) ] {
-		if (neighbours.containsKey(occurrence.source)) {
-			neighbours.put(occurrence.source, new DroneState(neighbours.get(occurrence.source), occurrence.state))
-		} else {
-			neighbours.put(occurrence.source, new DroneState(null as Pose, occurrence.state))
+		synchronized(this.neighbours) {
+			if (neighbours.containsKey(occurrence.source)) {
+				neighbours.put(occurrence.source, new DroneState(neighbours.get(occurrence.source), occurrence.state))
+			} else {
+				neighbours.put(occurrence.source, new DroneState(null as Pose, occurrence.state))
+			}
 		}
 	}
 	
@@ -132,7 +136,10 @@ behavior ReachTargetPoint {
 			return new Vector3r()
 			
 		// Find among the neighbours if there are potentials obstacles and compute the time to collision
-		var sliding = neighbours
+		var sliding: Vector3r = null
+
+		synchronized(this.neighbours) {
+			sliding = neighbours
 				.filter [ k, v | v.pose !== null && v.state !== null ]
 				.mapValues [			
 					val selfPosition = new Vector3r(position.x, position.y, 0f)	// We ignore Z
@@ -178,8 +185,8 @@ behavior ReachTargetPoint {
 						val selfClosePosition = new Vector3r(selfPosition.x + selfDirection.x * t, selfPosition.y + selfDirection.y * t, t)
 						val otherClosePosition = new Vector3r(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, t)
 
-						info("---\n" + selfPosition.x + ", " + selfPosition.y + " ; " + selfDirection.x + ", " + selfDirection.y + "\n" +
-								otherPosition.x + ", " + otherPosition.y + " ; " + otherDirection.x + ", " + otherDirection.y)
+						//info("---\n" + selfPosition.x + ", " + selfPosition.y + " ; " + selfDirection.x + ", " + selfDirection.y + "\n" +
+						//		otherPosition.x + ", " + otherPosition.y + " ; " + otherDirection.x + ", " + otherDirection.y)
 						
 						val obstacleDirection = otherClosePosition.minus(selfPosition).normalized()
 						//val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
@@ -214,11 +221,12 @@ behavior ReachTargetPoint {
 						//slidingDirection.times(slidingScale)
 					}
 				].values.reduce[p1, p2 | new Vector3r(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
-				
+		}
+		
 		if(sliding === null)
 			sliding = new Vector3r(0f, 0f, 0f)
 
-		val w = 10f
+		val w = 25f
 		val alpha = 2f
 		val delta = if (sliding.length() < 1e-7f) 1f else 1f - Math.exp(-alpha / sliding.length())
 		val targetDirection = targetPoint.minus(position).normalized()
