@@ -29,16 +29,28 @@ class Vector4 {
         this.z = z
         this.t = t
 	}
+
+    def plus(v: Vector4) : Vector4 {
+        return this + v
+    }
 	
 	def operator_plus(v: Vector4) : Vector4 {
 		return new Vector4(x + v.x, y + v.y, z + v.z, t + v.t)
 	}
+
+    def minus(v: Vector4) : Vector4 {
+        return this - v
+    }
 	
-	def operator_minus(v: Vector2) : Vector2 {
+	def operator_minus(v: Vector4) : Vector4 {
 		return new Vector4(x - v.x, y - v.y, z - v.z, t - v.t)
 	}
+
+    def times(l: Float) : Vector4 {
+        return this * l
+    }
 	
-	def operator_multiply(l: Float) : Vector2 {
+	def operator_multiply(l: Float) : Vector4 {
 		return new Vector4(x * l, y * l, z * l, t * l)
 	}
 
@@ -49,10 +61,18 @@ class Vector4 {
 	def operator_minus(): Vector4 {
 		return new Vector4(-x, -y, -z, -t)
 	}
+
+    def cross(v: Vector4): Vector4 {
+
+    }
 	
 	def squaredNorm() : Float {
 		return x * x + y * y + z * z + t * t
 	}
+
+    def normalized() : Vector4 {
+        return this * (1.0f / norm())
+    }
 	
 	def norm(): Float {
 		return Math.sqrt(squaredNorm()).floatValue
