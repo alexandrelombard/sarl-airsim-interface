@@ -19,7 +19,7 @@ import io.sarl.airsim.communication.NotifyKinematics
 import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.airsim.influences.Takeoff
 import io.sarl.airsim.influences.sim.SetVehiclePose
-import io.sarl.airsim.Vector4
+import io.sarl.airsim.math.Vector4
 
 /** 
  * Drone behavior: defines a target point (the opposite of the start point) and try to reach this target
