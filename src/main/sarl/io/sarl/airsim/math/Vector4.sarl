@@ -3,7 +3,7 @@ package io.sarl.airsim.math
 import org.eclipse.xtend.lib.annotations.Accessors
 
 /**
- * Represents a 2D vector
+ * Represents a 4D vector
  * @author Alexandre Lombard
  */
 class Vector4 {
@@ -62,8 +62,8 @@ class Vector4 {
 		return new Vector4(-x, -y, -z, -t)
 	}
 
-    def cross(v: Vector4): Vector4 {
-
+    def dot(v: Vector4) : Float {
+        return x * v.x + y * v.y + z * v.z + t * v.t
     }
 	
 	def squaredNorm() : Float {
@@ -77,6 +77,10 @@ class Vector4 {
 	def norm(): Float {
 		return Math.sqrt(squaredNorm()).floatValue
 	}
+
+    def length() : Float {
+        return norm()
+    }
 	
 	override toString() : String {
 		return "[" + x + ", " + y + ", " + z + ", " + t + "]"
