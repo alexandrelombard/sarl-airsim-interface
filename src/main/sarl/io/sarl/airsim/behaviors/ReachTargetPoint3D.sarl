@@ -19,6 +19,7 @@ import io.sarl.airsim.communication.NotifyKinematics
 import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.airsim.influences.Takeoff
 import io.sarl.airsim.influences.sim.SetVehiclePose
+import io.sarl.airsim.Vector4
 
 /** 
  * Drone behavior: defines a target point (the opposite of the start point) and try to reach this target
@@ -172,23 +173,24 @@ behavior ReachTargetPoint {
 			sliding = neighbours
 				.filter [ k, v | v.pose !== null && v.state !== null ]
 				.mapValues [			
-					val selfPosition = new Vector3r(position.x, position.y, 0f)	// We ignore Z
+					val selfPosition = new Vector4(position.x, position.y, position.z, 0f)
 					val selfDirection = this.velocity
-					val otherPosition = new Vector3r(it.pose.position.x, it.pose.position.y, 0f)	// We ignore Z
+					val otherPosition = new Vector4(it.pose.position.x, it.pose.position.y, it.pose.position.z, 0f)
 					val otherDirection = it.state.linearVelocity
 					
 					// If some data are erroneous, we ignore them
 					if(Float.isNaN(otherPosition.x) || Float.isNaN(selfPosition.x) || Float.isNaN(otherDirection.x) || Float.isNaN(selfDirection.x))
 						return new Vector3r()
 					
-					var d = Math.abs(otherPosition.minus(selfPosition).cross(new Vector3r(selfDirection.x, selfDirection.y, 1)).dot(new Vector3r(otherDirection.x, otherDirection.y, 1))) /
-							(new Vector3r(selfDirection.x, selfDirection.y, 1).cross(new Vector3r(otherDirection.x, otherDirection.y, 1)).length())
+					var d = Math.abs(
+								otherPosition.minus(selfPosition).cross(new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1)).dot(new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1))) /
+								(new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1).cross(new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1)).length())
 
 					if(Double.isNaN(d)) {
 						// If d is NaN it means that the direction are colinear
 						// If so, the distance between the lines is the distance of a point from a line to a point
 						// of the other line 
-						val u = new Vector3r(otherDirection.x, otherDirection.y, 1f)
+						val u = new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1)
 						d = selfPosition.minus(otherPosition).cross(u).length() / u.length()
 						
 						if(Double.isNaN(d)) d = 0.0f
@@ -200,9 +202,8 @@ behavior ReachTargetPoint {
 					} else {
 						// There may be a collision
 						
-						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2)
-						//val coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
-						var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
+						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2) + Math.pow(selfDirection.z - otherDirection.z, 2)
+						var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)  + 2f * (selfPosition.z - otherPosition.z) * (selfDirection.z - otherDirection.z)
 						
 						val coefC = -Math.pow(d, 2)
 						
@@ -212,8 +213,8 @@ behavior ReachTargetPoint {
 						if(t < 1e-3f)
 							return new Vector3r() // Too late, we ignore to avoid errors further
 						
-						val selfClosePosition = new Vector3r(selfPosition.x + selfDirection.x * t, selfPosition.y + selfDirection.y * t, t)
-						val otherClosePosition = new Vector3r(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, t)
+						val selfClosePosition = new Vector4(selfPosition.x + selfDirection.x * t, selfPosition.y + selfDirection.y * t, selfPosition.z + selfDirection.z * t, t)
+						val otherClosePosition = new Vector4(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, otherPosition.z + otherDirection.z * t, t)
 
 						//info("---\n" + selfPosition.x + ", " + selfPosition.y + " ; " + selfDirection.x + ", " + selfDirection.y + "\n" +
 						//		otherPosition.x + ", " + otherPosition.y + " ; " + otherDirection.x + ", " + otherDirection.y)
@@ -224,32 +225,20 @@ behavior ReachTargetPoint {
 						if(targetPoint.minus(selfPosition).dot(obstacleDirection) < 0.0f)
 							return new Vector3r()
 						
-						val slidingDirection = new Vector3r(-obstacleDirection.y, obstacleDirection.x, 0)
+						//val slidingDirection = new Vector3r(-obstacleDirection.y, obstacleDirection.x, 0)
+						val otu = new Vector3r(this.targetPoint.x - selfPosition.x, this.targetPoint.y - selfPosition.y, this.targetPoint.z - selfPosition.z).normalized()
+						val vu = new Vector3r(selfDirection.x, selfDirection.y, selfDirection.z).normalized()
+						val slidingDirection = otu.cross(vu)
 						
-						val sigma = 5f
-						val phi = 1.0f
+						val sigma = 1f
+						val phi = 2f
 						val tmax = 5f
 						//val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
-						//val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
-						val slidingScale = 1.0f
+						val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
 						
-						//info("TTC: " + t + ", d: " + d + ", Sliding scale: " + slidingScale + ", Dot: " +
-						//		targetPoint.minus(selfPosition).dot(obstacleDirection) + ", Obstacle: (" + otherClosePosition.x + ", " + otherClosePosition.y + ")")
-
-						//val z = (targetPoint.x - selfPosition.x) * obstacleCloseDirection.y - (targetPoint.y - selfPosition.y) * obstacleCloseDirection.x
-						//val z = (selfDirection.x) * obstacleCloseDirection.y - (selfDirection.y) * obstacleCloseDirection.x
-						//val sign = if(z > 0.0) 1 else -1
-						//val sign = if(targetPoint.minus(selfPosition).dot(obstacleDirection) < 0) -1 else 1
 						val sign = 1
 
-						slidingDirection.times(slidingScale * sign)
-						
-						//if (obstacleCloseDirection.y * targetPoint.x + slidingDirection.y * targetPoint.y >= 0) {
-						//	slidingDirection.times(-slidingScale)
-						//} else {
-						//	slidingDirection.times(slidingScale)
-						//}
-						//slidingDirection.times(slidingScale)
+						slidingDirection.times(sign)
 					}
 				].values.reduce[p1, p2 | new Vector3r(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
 		}

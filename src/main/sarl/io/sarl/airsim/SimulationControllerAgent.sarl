@@ -20,6 +20,7 @@ import org.msgpack.rpc.loop.EventLoop
 import io.sarl.airsim.perceptions.MultirotorStatePerception
 import io.sarl.airsim.perceptions.sim.SimPosePerception
 import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
+import io.sarl.airsim.influences.sim.SetVehiclePose
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -78,7 +79,15 @@ agent SimulationControllerAgent {
 			occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
 			new YawMode(), affectOrGetDrone(occurrence.source))
 	}
+
+	on SetVehiclePose {
+		multirotorClient.simSetVehiclePose(occurrence.pose, true, affectOrGetDrone(occurrence.source))
+	}
 	
+	/**
+	 * This function affects a drone to an agent (if it has no drone affected), or it returns the name of the
+	 * affected drone in the other case.
+	 */
 	synchronized def affectOrGetDrone(address : Address) {
 		var name: String
 		if (!affectedDrones.containsKey(address)) {
