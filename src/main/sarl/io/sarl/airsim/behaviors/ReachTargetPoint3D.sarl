@@ -27,7 +27,7 @@ import io.sarl.airsim.math.Vector4
  * @author Alexandre Lombard
  * 
  */
-behavior ReachTargetPoint {
+behavior ReachTargetPoint3D {
 	
 	private val targetRadius = 0.5f
 	private val periodMs = 100
@@ -182,16 +182,32 @@ behavior ReachTargetPoint {
 					if(Float.isNaN(otherPosition.x) || Float.isNaN(selfPosition.x) || Float.isNaN(otherDirection.x) || Float.isNaN(selfDirection.x))
 						return new Vector3r()
 					
-					var d = Math.abs(
-								otherPosition.minus(selfPosition).cross(new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1)).dot(new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1))) /
-								(new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1).cross(new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1)).length())
+					//var d = Math.abs(
+					//			otherPosition.minus(selfPosition).cross(new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1f)).dot(new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1f))) /
+					//			(new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1f).cross(new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1f)).length())
+
+					val a0 = selfPosition
+					val b0 = otherPosition
+					val va = new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1.0f)
+					val vb = new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1.0f)
+					val A = va.squaredNorm()
+					val B = 2 * (va.dot(a0) - va.dot(b0))
+					val C = 2 * va.dot(vb)
+					val D = 2 * (vb.dot(b0) - vb.dot(a0))
+					val E = vb.squaredNorm()
+					val F = a0.squaredNorm() + b0.squaredNorm()
+
+					var d = Math.sqrt(Math.abs((B * C * D + B * B * E + C * C * F + A * (D * D - 4 * E * F)) / (C * C - 4 * A * E)))
+
+					println("d: " + d)
 
 					if(Double.isNaN(d)) {
 						// If d is NaN it means that the direction are colinear
 						// If so, the distance between the lines is the distance of a point from a line to a point
 						// of the other line 
-						val u = new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1)
-						d = selfPosition.minus(otherPosition).cross(u).length() / u.length()
+						//val u = new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1f)
+						//d = selfPosition.minus(otherPosition).cross(u).length() / u.length()
+						d = 0.0f	// TODO
 						
 						if(Double.isNaN(d)) d = 0.0f
 					}
@@ -201,7 +217,6 @@ behavior ReachTargetPoint {
 						new Vector3r(0f, 0f, 0f)
 					} else {
 						// There may be a collision
-						
 						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2) + Math.pow(selfDirection.z - otherDirection.z, 2)
 						var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)  + 2f * (selfPosition.z - otherPosition.z) * (selfDirection.z - otherDirection.z)
 						
@@ -210,19 +225,20 @@ behavior ReachTargetPoint {
 						val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
 						val t = ((-coefB + Math.sqrt(delta)) / (2 * coefA) / 2).floatValue	// Note: I'm dividing by two but I don't know why
 	
+						println("t: " + t)
+
 						if(t < 1e-3f)
 							return new Vector3r() // Too late, we ignore to avoid errors further
 						
 						val selfClosePosition = new Vector4(selfPosition.x + selfDirection.x * t, selfPosition.y + selfDirection.y * t, selfPosition.z + selfDirection.z * t, t)
 						val otherClosePosition = new Vector4(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, otherPosition.z + otherDirection.z * t, t)
-
 						//info("---\n" + selfPosition.x + ", " + selfPosition.y + " ; " + selfDirection.x + ", " + selfDirection.y + "\n" +
 						//		otherPosition.x + ", " + otherPosition.y + " ; " + otherDirection.x + ", " + otherDirection.y)
 						
 						val obstacleDirection = otherClosePosition.minus(selfPosition).normalized()
 						//val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
 						
-						if(targetPoint.minus(selfPosition).dot(obstacleDirection) < 0.0f)
+						if(targetPoint.minus(new Vector3r(selfPosition.x, selfPosition.y, selfPosition.z)).dot(new Vector3r(obstacleDirection.x, obstacleDirection.y, obstacleDirection.z)) < 0.0f)
 							return new Vector3r()
 						
 						//val slidingDirection = new Vector3r(-obstacleDirection.y, obstacleDirection.x, 0)
