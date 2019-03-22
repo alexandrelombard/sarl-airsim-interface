@@ -1,0 +1,215 @@
+{
+ "SimMode" : "Multirotor", 
+ "SettingsVersion" : 1.2, 
+ "SeeDocsAt" : "https://github.com/Microsoft/AirSim/blob/master/docs/settings.md",
+ "OriginGeopoint": {
+    "Latitude": 47.641468,
+    "Longitude": 6.140165,
+    "Altitude": 310
+  },
+  "DefaultSensors": {
+    "Barometer": {
+        "SensorType": 1,
+        "Enabled" : true
+    },
+    "IMU": {
+        "SensorType": 2,
+        "Enabled": true
+    },
+    "Gps": {
+        "SensorType": 3,
+        "Enabled" : true
+    },
+    "Lidar": { 
+        "SensorType": 6,
+        "Enabled" : true,
+        "NumberOfChannels": 1,
+        "RotationsPerSecond": 10,
+        "PointsPerSecond": 360,
+        "X": 0, "Y": 0, "Z": -1,
+        "DrawDebugPoints": true
+    }
+  },
+  "Vehicles": {
+    "S0": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 8,
+      "Y": 0,
+      "Z": -4,
+      "Yaw": 180
+    },
+    "S1": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 7.60,
+      "Y": 2.47,
+      "Z": -4,
+      "Yaw": 198
+    },
+    "S2": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 6.47,
+      "Y": 4.70,
+      "Z": -4,
+      "Yaw": 216
+    },
+    "S3": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 4.70,
+      "Y": 6.47,
+      "Z": -4,
+      "Yaw": 234
+    },
+    "S4": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 2.47,
+      "Y": 7.61,
+      "Z": -4,
+      "Yaw": 252
+    },
+    "S5": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 0,
+      "Y": 8,
+      "Z": -4,
+      "Yaw": 270
+    },
+    "S6": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -2.47,
+      "Y": 7.61,
+      "Z": -4,
+      "Yaw": 288
+    },
+    "S7": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -4.70,
+      "Y": 6.47,
+      "Z": -4,
+      "Yaw": 306
+    },
+    "S8": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -6.47,
+      "Y": 4.70,
+      "Z": -4,
+      "Yaw": 324
+    },
+    "S9": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -7.61,
+      "Y": 2.47,
+      "Z": -4,
+      "Yaw": 342
+    },
+    "S10": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -8,
+      "Y": 0,
+      "Z": -4,
+      "Yaw": 0
+    },
+    "S11": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -7.61,
+      "Y": -2.47,
+      "Z": -4,
+      "Yaw": 18
+    },
+    "S12": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -6.47,
+      "Y": -4.70,
+      "Z": -4,
+      "Yaw": 36
+    },
+    "S13": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -4.70,
+      "Y": -6.47,
+      "Z": -4,
+      "Yaw": 54
+    },
+    "S14": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -2.47,
+      "Y": -7.61,
+      "Z": -4,
+      "Yaw": 72
+    },
+    "S15": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 0,
+      "Y": -8,
+      "Z": -4,
+      "Yaw": 90
+    },
+    "S16": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 2.47,
+      "Y": -7.61,
+      "Z": -4,
+      "Yaw": 108
+    },
+    "S17": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 4.70,
+      "Y": -6.47,
+      "Z": -4,
+      "Yaw": 126
+    },
+    "S18": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 6.47,
+      "Y": -4.70,
+      "Z": -4,
+      "Yaw": 144
+    },
+    "S19": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 7.61,
+      "Y": -2.47,
+      "Z": -4,
+      "Yaw": 162
+    },
+  }
+}

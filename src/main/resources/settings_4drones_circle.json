@@ -1,0 +1,71 @@
+{
+ "SimMode" : "Multirotor", 
+ "SettingsVersion" : 1.2, 
+ "SeeDocsAt" : "https://github.com/Microsoft/AirSim/blob/master/docs/settings.md",
+ "OriginGeopoint": {
+    "Latitude": 47.641468,
+    "Longitude": 6.140165,
+    "Altitude": 310
+  },
+  "DefaultSensors": {
+    "Barometer": {
+        "SensorType": 1,
+        "Enabled" : true
+    },
+    "IMU": {
+        "SensorType": 2,
+        "Enabled": true
+    },
+    "Gps": {
+        "SensorType": 3,
+        "Enabled" : true
+    },
+    "Lidar": { 
+        "SensorType": 6,
+        "Enabled" : true,
+        "NumberOfChannels": 1,
+        "RotationsPerSecond": 10,
+        "PointsPerSecond": 360,
+        "X": 0, "Y": 0, "Z": -1,
+        "DrawDebugPoints": true
+    }
+  },
+  "Vehicles": {
+    "Alpha": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 8,
+      "Y": 0,
+      "Z": -4,
+      "Yaw": 180
+    },
+    "Bravo": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 0,
+      "Y": 8,
+      "Z": -4,
+      "Yaw": -90
+    },
+    "Charly": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": -8,
+      "Y": 0,
+      "Z": -4,
+      "Yaw": 0
+    },
+    "Delta": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "X": 0,
+      "Y": -8,
+      "Z": -4,
+      "Yaw": 90
+    }
+  }
+}
