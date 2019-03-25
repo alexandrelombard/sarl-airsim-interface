@@ -231,7 +231,11 @@ behavior ReachTargetPoint {
 						val tmax = 5f
 						//val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
 						//val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
-						val slidingScale = 1.0f
+						//val slidingScale = 1.0f	// This one is functional
+						val alpha = 3
+						val tau = 4
+						val slidingScale = (alpha - 1) * Math.exp(-t / tau) + 1
+						
 						
 						//info("TTC: " + t + ", d: " + d + ", Sliding scale: " + slidingScale + ", Dot: " +
 						//		targetPoint.minus(selfPosition).dot(obstacleDirection) + ", Obstacle: (" + otherClosePosition.x + ", " + otherClosePosition.y + ")")
@@ -240,9 +244,9 @@ behavior ReachTargetPoint {
 						//val z = (selfDirection.x) * obstacleCloseDirection.y - (selfDirection.y) * obstacleCloseDirection.x
 						//val sign = if(z > 0.0) 1 else -1
 						//val sign = if(targetPoint.minus(selfPosition).dot(obstacleDirection) < 0) -1 else 1
-						val sign = 1
+						val sign = 1.0
 
-						slidingDirection.times(slidingScale * sign)
+						slidingDirection.times((slidingScale * sign).floatValue)
 						
 						//if (obstacleCloseDirection.y * targetPoint.x + slidingDirection.y * targetPoint.y >= 0) {
 						//	slidingDirection.times(-slidingScale)
@@ -257,7 +261,7 @@ behavior ReachTargetPoint {
 		if(sliding === null)
 			sliding = new Vector3r(0f, 0f, 0f)
 
-		val w = 25f
+		val w = 10f
 		val alpha = 2f
 		val delta = if (sliding.length() < 1e-7f) 1f else 1f - Math.exp(-alpha / sliding.length())
 		val targetDirection = targetPoint.minus(position).normalized()

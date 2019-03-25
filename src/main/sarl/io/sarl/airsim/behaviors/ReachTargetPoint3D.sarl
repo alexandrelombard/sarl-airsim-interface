@@ -143,6 +143,7 @@ behavior ReachTargetPoint3D {
 	}
 	
 	def computeForce(): Vector3r {
+		/*
 		// Checking pre-conditions
 		if(this.pose === null)
 			return new Vector3r()
@@ -275,7 +276,10 @@ behavior ReachTargetPoint3D {
 		//info("Sliding: " + sliding.x + ", " + sliding.y + ", " + sliding.z)
 		//info("Force: " + result.x + ", " + result.y + ", " + result.z)
 
-		return result 
+		return result
+		*/
+
+		return new Vector3r()
 	}
 
 	def computeForceSimple() : Vector3r {
