@@ -21,6 +21,7 @@ import io.sarl.airsim.perceptions.MultirotorStatePerception
 import io.sarl.airsim.perceptions.sim.SimPosePerception
 import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 import io.sarl.airsim.influences.sim.SetVehiclePose
+import java.util.Collections
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -33,7 +34,8 @@ agent SimulationControllerAgent {
 	
 	// Temporary solution to manage the affectation of the drones to the agents
 	//val availableDrones = newLinkedList("Alpha", "Bravo", "Charly", "Delta", "Echo")
-	val availableDrones = newLinkedList("Alpha", "Charly", "Bravo", "Delta", "Echo")
+	//val availableDrones = newLinkedList("Alpha", "Charly", "Bravo", "Delta", "Echo")
+	val availableDrones = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19")
 	val affectedDrones = <Address, String>newHashMap
 
 	val loop = EventLoop.defaultEventLoop()
@@ -42,6 +44,8 @@ agent SimulationControllerAgent {
 	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
 	
 	on Initialize {
+		Collections.shuffle(availableDrones)
+
 		every(100) [
 			synchronized (this) {
 				// Fetch the lidar data and propagate it

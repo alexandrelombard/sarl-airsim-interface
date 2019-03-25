@@ -54,7 +54,7 @@ behavior ReachTargetPoint3D {
 		// Note: before the takeoff, the drone is not affected
 		emit (new Takeoff)
 
-		in(1000) [
+		in(2000) [
 			every(periodMs) [
 				if(this.initialPose !== null && this.targetPoint !== null &&
 						new Vector3r(this.pose.position.x, this.pose.position.y, 0).minus(new Vector3r(this.targetPoint.x, this.targetPoint.y, 0)).length() < targetRadius &&

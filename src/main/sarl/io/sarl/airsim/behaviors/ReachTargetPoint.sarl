@@ -53,7 +53,7 @@ behavior ReachTargetPoint {
 		// Note: before the takeoff, the drone is not affected
 		emit (new Takeoff)
 
-		in(1000) [
+		in(2000) [
 			every(periodMs) [
 				if(this.initialPose !== null && this.targetPoint !== null &&
 						new Vector3r(this.pose.position.x, this.pose.position.y, 0).minus(new Vector3r(this.targetPoint.x, this.targetPoint.y, 0)).length() < targetRadius &&
@@ -62,18 +62,18 @@ behavior ReachTargetPoint {
 					//reset()
 					// If we are at the target position, we change the target position (source becomes destination)
 					//switchTargetPoint()
-					synchronized (this.pose) {
-						if(this.targetPoint !== null) {
-							if(this.targetPoint.minus(this.initialPose.position).length() < 1e-2f) {
-								this.targetPoint = new Vector3r(
-									-this.initialPose.position.x,
-									-this.initialPose.position.y,
-									this.initialPose.position.z)
-							} else {
-								this.targetPoint = this.initialPose.position
-							}
-						}
-					}
+//					synchronized (this.pose) {
+//						if(this.targetPoint !== null) {
+//							if(this.targetPoint.minus(this.initialPose.position).length() < 1e-2f) {
+//								this.targetPoint = new Vector3r(
+//									-this.initialPose.position.x,
+//									-this.initialPose.position.y,
+//									this.initialPose.position.z)
+//							} else {
+//								this.targetPoint = this.initialPose.position
+//							}
+//						}
+//					}
 				} else {
 					// Note: the computed force is scaled to reduce its strength
 					val movementForce = computeForce().times(0.1f)
@@ -263,7 +263,7 @@ behavior ReachTargetPoint {
 		val targetDirection = targetPoint.minus(position).normalized()
 		val attraction = targetDirection.times((w * delta).floatValue)
 
-		val result = if(sliding === null) attraction else sliding.times(5f).plus(attraction)
+		val result = if(sliding === null) attraction else sliding.times(10f).plus(attraction)
 		//val result = attraction
 
 		//info("Attraction: " + attraction.x + ", " + attraction.y + ", " + attraction.z)

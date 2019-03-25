@@ -18,12 +18,15 @@ agent BootAgent {
 	on Initialize {
 		spawn(SimulationControllerAgent)
 		Thread.sleep(2000)
-		spawn(DroneAgent)
-		Thread.sleep(3000)
-		spawn(DroneAgent)
-		spawn(DroneAgent)
-		Thread.sleep(1000)
-		spawn(DroneAgent)
-		//spawn(DroneAgent)
+//		spawn(DroneAgent)
+//		Thread.sleep(3000)
+//		spawn(DroneAgent)
+//		spawn(DroneAgent)
+//		Thread.sleep(1000)
+//		spawn(DroneAgent)
+		for(var idx = 0; idx < 20; idx++) {
+			spawn(DroneAgent)
+			Thread.sleep((2000 * Math.random()).intValue)
+		}
 	}
 }
