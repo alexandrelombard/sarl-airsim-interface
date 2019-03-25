@@ -232,9 +232,10 @@ behavior ReachTargetPoint {
 						//val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
 						//val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
 						//val slidingScale = 1.0f	// This one is functional
-						val alpha = 3
-						val tau = 4
-						val slidingScale = (alpha - 1) * Math.exp(-t / tau) + 1
+						val offset = 0.25
+						val alpha = 2
+						val tau = 8
+						val slidingScale = (alpha - offset) * Math.exp(-t / tau) + offset
 						
 						
 						//info("TTC: " + t + ", d: " + d + ", Sliding scale: " + slidingScale + ", Dot: " +
