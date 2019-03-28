@@ -1,0 +1,84 @@
+package io.sarl.airsim.math
+
+import org.eclipse.xtend.lib.annotations.Accessors
+
+import fr.utbm.airsim.api.Vector3r
+
+/**
+ * Represents a 3D vector
+ * @author Alexandre Lombard
+ */
+class Vector3 {
+	@Accessors(PUBLIC_GETTER)
+	val x : Float
+	@Accessors(PUBLIC_GETTER)
+	val y: Float
+	@Accessors(PUBLIC_GETTER)
+	val z: Float
+	
+	new() {
+		this.x = 0f
+		this.y = 0f
+		this.z = 0f
+	}
+	
+	new (x: Float, y: Float, z: Float) {
+		this.x = x
+		this.y = y
+		this.z = z
+	}
+
+	new (v: Vector3r) {
+		this.x = v.x
+		this.y = v.y
+		this.z = v.z
+	}
+
+	def cross(v: Vector3): Vector3 {
+		return new Vector3(y  * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x)
+	}
+
+	def dot(v: Vector3): Float {
+		return x * v.x + y * v.y + z * v.z
+	}
+	
+	def operator_plus(v: Vector3) : Vector3 {
+		return new Vector3(x + v.x, y + v.y, z + v.z)
+	}
+	
+	def operator_minus(v: Vector3) : Vector3 {
+		return new Vector3(x - v.x, y - v.y, z - v.z)
+	}
+	
+	def operator_multiply(l: Float) : Vector3 {
+		return new Vector3(x * l, y * l, z * l)
+	}
+
+	def operator_multiply(l : Float, v : Vector3) : Vector3 {
+		return new Vector3(v.x * l, v.y * l, v.z * l)
+	}
+	
+	def operator_minus(): Vector3 {
+		return new Vector3(-x, -y, -z)
+	}
+	
+	def squaredNorm() : Float {
+		return x * x + y * y + z * z
+	}
+	
+	def norm(): Float {
+		return Math.sqrt(squaredNorm()).floatValue
+	}
+
+	def length(): Float {
+		return norm()
+	}
+
+	def normalized(): Vector3 {
+		return (1f / norm()) * this
+	}
+	
+	override toString() : String {
+		return "[" + x + ", " + y + ", " + z + "]"
+	}
+}

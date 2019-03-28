@@ -181,8 +181,9 @@ behavior ReachTargetPoint {
 					if(Float.isNaN(otherPosition.x) || Float.isNaN(selfPosition.x) || Float.isNaN(otherDirection.x) || Float.isNaN(selfDirection.x))
 						return new Vector3r()
 					
-					var d = Math.abs(otherPosition.minus(selfPosition).cross(new Vector3r(selfDirection.x, selfDirection.y, 1)).dot(new Vector3r(otherDirection.x, otherDirection.y, 1))) /
-							(new Vector3r(selfDirection.x, selfDirection.y, 1).cross(new Vector3r(otherDirection.x, otherDirection.y, 1)).length())
+					var numerator = otherPosition.minus(selfPosition).cross(new Vector3r(selfDirection.x, selfDirection.y, 1)).dot(new Vector3r(otherDirection.x, otherDirection.y, 1))
+					var denominator = new Vector3r(selfDirection.x, selfDirection.y, 1).cross(new Vector3r(otherDirection.x, otherDirection.y, 1)).length()
+					var d = Math.abs(numerator) / denominator
 
 					if(Double.isNaN(d)) {
 						// If d is NaN it means that the direction are colinear
@@ -275,7 +276,7 @@ behavior ReachTargetPoint {
 		//info("Sliding: " + sliding.x + ", " + sliding.y + ", " + sliding.z)
 		//info("Force: " + result.x + ", " + result.y + ", " + result.z)
 
-		return result 
+		return result
 	}
 
 	def computeForceSimple() : Vector3r {

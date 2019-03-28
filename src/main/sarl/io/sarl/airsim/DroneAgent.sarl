@@ -19,7 +19,7 @@ agent DroneAgent {
 	
 	on Initialize {		
 		//registerBehavior(new ForwardWithBasicAvoidance(this))
-		registerBehavior(new ReachTargetPoint(this))
-		//registerBehavior(new ReachTargetPoint3D(this))
+		//registerBehavior(new ReachTargetPoint(this))
+		registerBehavior(new ReachTargetPoint3D(this))
 	}
 }
