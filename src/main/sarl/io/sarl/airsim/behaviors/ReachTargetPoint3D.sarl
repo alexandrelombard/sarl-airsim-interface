@@ -252,7 +252,6 @@ behavior ReachTargetPoint3D {
 						// There may be a collision
 						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2) + Math.pow(selfDirection.z - otherDirection.z, 2)
 						var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)  + 2f * (selfPosition.z - otherPosition.z) * (selfDirection.z - otherDirection.z)
-						
 						val coefC = -Math.pow(d, 2)
 						
 						val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
@@ -271,23 +270,30 @@ behavior ReachTargetPoint3D {
 						val obstacleDirection = (otherClosePosition - selfPosition).normalized()
 						//val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
 						
-						if((targetPoint - new Vector3(selfPosition.x, selfPosition.y, selfPosition.z)).dot(new Vector3(obstacleDirection.x, obstacleDirection.y, obstacleDirection.z)) < 0.0f)
+						if((targetPoint - selfPosition.toVector3()).dot(obstacleDirection.toVector3()) < 0.0f)
 							return new Vector3()
 						
 						//val slidingDirection = new Vector3(-obstacleDirection.y, obstacleDirection.x, 0)
-						val otu = new Vector3(this.targetPoint.x - selfPosition.x, this.targetPoint.y - selfPosition.y, this.targetPoint.z - selfPosition.z).normalized()
+						val otu = (this.targetPoint - selfPosition.toVector3()).normalized()
 						val vu = new Vector3(selfDirection.x, selfDirection.y, selfDirection.z).normalized()
-						val slidingDirection = otu.cross(vu)
+						val slidingDirection: Vector3 = otu.cross(vu)
 						
 						val sigma = 1f
 						val phi = 2f
 						val tmax = 5f
 						//val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
-						val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
+						//val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
+						val offset = 0.25
+						val alpha = 2.0f
+						val tau = 8.0f
+						val slidingScale = (alpha - offset) * Math.exp(-t / tau) + offset
 						
 						val sign = 1.0f
+						val slidingVector = slidingDirection * slidingScale.floatValue * sign
+						
+						info(slidingVector)
 
-						slidingDirection * sign
+						slidingDirection * slidingScale.floatValue * sign
 						
 					}
 

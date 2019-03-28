@@ -81,6 +81,10 @@ class Vector4 {
     def length() : Float {
         return norm()
     }
+
+	def toVector3(): Vector3 {
+		return new Vector3(x, y, z)
+	}
 	
 	override toString() : String {
 		return "[" + x + ", " + y + ", " + z + ", " + t + "]"
