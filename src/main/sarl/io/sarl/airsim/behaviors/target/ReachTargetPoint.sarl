@@ -89,7 +89,7 @@ behavior ReachTargetPoint extends AbstractReachTargetPoint {
 
 		synchronized(this.neighbours) {
 			sliding = neighbours
-				.filter [k, v : ExternalDroneState | v.pose !== null && v.state !== null]
+				.filter [k, v | v.pose !== null && v.state !== null]
 				.mapValues[
 					val selfPosition = new Vector3(position.x, position.y, 0f)	// We ignore Z
 					val selfDirection = this.velocity
@@ -119,14 +119,8 @@ behavior ReachTargetPoint extends AbstractReachTargetPoint {
 						new Vector3(0f, 0f, 0f)
 					} else {
 						// There may be a collision
-						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2)
-						var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
-						
-						val coefC = -Math.pow(d, 2)
-						
-						val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
-						val t = ((-coefB + Math.sqrt(delta)) / (2 * coefA) / 2).floatValue	// Note: I'm dividing by two but I don't know why
-	
+						val t = computeCollisionTime(d, selfPosition, selfDirection, otherPosition, otherDirection.toVector3)
+				
 						if(t < 1e-3f)
 							return new Vector3() // Too late, we ignore to avoid errors further
 						
@@ -139,10 +133,7 @@ behavior ReachTargetPoint extends AbstractReachTargetPoint {
 						
 						val slidingDirection = new Vector3(-obstacleDirection.y, obstacleDirection.x, 0f)
 						
-						val offset = 0.25
-						val alpha = 2
-						val tau = 8
-						val slidingScale = (alpha - offset) * Math.exp(-t / tau) + offset
+						val slidingScale = computeSlidingScale(t)
 						
 						slidingDirection.times(slidingScale.floatValue)
 				 	}
@@ -153,13 +144,8 @@ behavior ReachTargetPoint extends AbstractReachTargetPoint {
 		if(sliding === null)
 			sliding = new Vector3(0f, 0f, 0f)
 
-		val w = 10f
-		val alpha = 2f
-		val delta = if (sliding.length() < 1e-7f) 1f else 1f - Math.exp(-alpha / sliding.length())
-		val targetDirection = targetPoint.minus(position).normalized()
-		val attraction = targetDirection.times((w * delta).floatValue)
-
-		val result = if(sliding === null) attraction else sliding.times(10f).plus(attraction)
+		val attraction = computeAttraction(targetPoint.minus(position), sliding.length())
+		val result = sliding.times(10f).plus(attraction)
 
 		return result
 	}
@@ -177,5 +163,24 @@ behavior ReachTargetPoint extends AbstractReachTargetPoint {
 				}
 			}
 		}
+	}
+
+	/** 
+	 * Computes the time associated to the closest distance d of the trajectory of the drones
+	 * @param d the minimum distance between the spatio-temporal trajectories
+	 * @param selfPosition the position of this drone
+	 * @param selfDirection the direction of this drone
+	 * @param otherPosition the position of the other drone
+	 * @param otherDirection the direction of the other drone
+	 */
+	private def computeCollisionTime(d : Float, selfPosition: Vector3, selfDirection: Vector3, otherPosition: Vector3, otherDirection:Vector3) : Float {
+		val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2)
+		var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) +
+			2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)
+
+		val coefC = -Math.pow(d, 2)
+
+		val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
+		return ((-coefB + Math.sqrt(delta)) / (2 * coefA) / 2).floatValue 	// Note: I'm dividing by two but I don't know why
 	}
 }

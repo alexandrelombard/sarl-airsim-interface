@@ -110,21 +110,10 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 		if(sliding === null)
 			sliding = new Vector3(0f, 0f, 0f)
 
-		val w = 25f
-		val alpha = 2f
-		val delta = if (sliding.length() < 1e-7f) 1f else 1f - Math.exp(-alpha / sliding.length())
-		val targetDirection = (targetPoint - position).normalized()
-		val attraction = targetDirection * ((w * delta).floatValue)
-
-		val result = if(sliding === null) attraction else (sliding * 5f) + attraction
-		//val result = attraction
-
-		//info("Attraction: " + attraction.getX() + ", " + attraction.getY() + ", " + attraction.getZ())
-		//info("Sliding: " + sliding.getX() + ", " + sliding.getY() + ", " + sliding.getZ())
-		//info("Force: " + result.getX() + ", " + result.getY() + ", " + result.getZ())
+		val attraction = computeAttraction((targetPoint - position).normalized(), sliding.length(), 25f, 2f)
+		val result = (sliding * 5f) + attraction
 
 		return result
-		//return new Vector3()
 	}
 
 	def computeSlidingForce(): Vector3 {
@@ -151,19 +140,6 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					//var d = Math.abs(
 					//			otherPosition.minus(selfPosition).cross(new Vector4(selfDirection.getX(), selfDirection.getY(), selfDirection.getZ(), 1f)).dot(new Vector4(otherDirection.getX(), otherDirection.getY(), otherDirection.getZ(), 1f))) /
 					//			(new Vector4(selfDirection.getX(), selfDirection.getY(), selfDirection.getZ(), 1f).cross(new Vector4(otherDirection.getX(), otherDirection.getY(), otherDirection.getZ(), 1f)).length())
-	
-					//val a0 = selfPosition
-					//val b0 = otherPosition
-					//val va = new Vector4(selfDirection.getX(), selfDirection.getY(), selfDirection.getZ(), 1.0f)
-					//val vb = new Vector4(otherDirection.getX(), otherDirection.getY(), otherDirection.getZ(), 1.0f)
-					//val A: Float = va.squaredNorm()
-					//val B: Float = 2 * (va.dot(a0) - va.dot(b0))
-					//val C: Float = 2 * va.dot(vb)
-					//val D: Float = 2 * (vb.dot(b0) - vb.dot(a0))
-					//val E: Float = vb.squaredNorm()
-					//val F: Float = a0.squaredNorm() + b0.squaredNorm()
-					//
-					//var d = Math.sqrt(Math.abs((B * C * D + B * B * E + C * C * F + A * (D * D - 4 * E * F)) / (C * C - 4 * A * E)))
 					
 					val a0 = selfPosition
 					val b0 = otherPosition
@@ -180,7 +156,6 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					val e2 = va * (b * e - c * _d) - vb * (a * e - b * _d)
 					val e3 = (a * c - b * b)
 					var d = (e1 + e2 * (1.0f / e3)).norm()
-					println("d: " + d)
 
 					if(Double.isNaN(d)) {
 						// If d is NaN it means that the direction are colinear
@@ -198,27 +173,17 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 						new Vector3()
 					} else {
 						// There may be a collision
-						val coefA = Math.pow(selfDirection.getX() - otherDirection.getX(), 2) + Math.pow(selfDirection.getY() - otherDirection.getY(), 2) + Math.pow(selfDirection.getZ() - otherDirection.getZ(), 2)
-						var coefB = 2f * (selfPosition.getX() - otherPosition.getX()) * (selfDirection.getX() - otherDirection.getX()) + 2f * (selfPosition.getY() - otherPosition.getY()) * (selfDirection.getY() - otherDirection.getY())  + 2f * (selfPosition.getZ() - otherPosition.getZ()) * (selfDirection.getZ() - otherDirection.getZ())
-						val coefC = -Math.pow(d, 2)
-						
-						val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
-						val t = ((-coefB + Math.sqrt(delta)) / (2 * coefA) / 2).floatValue	// Note: I'm dividing by two but I don't know why
-	
-						println("t: " + t)
+						val t = computeCollisionTime(d, selfPosition, selfDirection, otherPosition, otherDirection.toVector3)
 
 						if(t < 1e-3f)
 							return new Vector3() // Too late, we ignore to avoid errors further
 						
 						val selfClosePosition = new Vector4(selfPosition.getX() + selfDirection.getX() * t, selfPosition.getY() + selfDirection.getY() * t, selfPosition.getZ() + selfDirection.getZ() * t, t)
 						val otherClosePosition = new Vector4(otherPosition.getX() + otherDirection.getX() * t, otherPosition.getY() + otherDirection.getY() * t, otherPosition.getZ() + otherDirection.getZ() * t, t)
-						//info("---\n" + selfPosition.getX() + ", " + selfPosition.getY() + " ; " + selfDirection.getX() + ", " + selfDirection.getY() + "\n" +
-						//		otherPosition.getX() + ", " + otherPosition.getY() + " ; " + otherDirection.getX() + ", " + otherDirection.getY())
 						
 						info("Self close position: " + selfClosePosition)
 						
 						val obstacleDirection = (otherClosePosition - selfPosition).normalized()
-						//val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
 						
 						if((targetPoint - selfPosition.toVector3()).dot(obstacleDirection.toVector3()) < 0.0f)
 							return new Vector3()
@@ -234,15 +199,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 						val slidingDirectionXZ = new Vector3(obstacleDirection.getZ(), 0.0f, -obstacleDirection.getX())
 						val slidingDirection = (slidingDirectionXY + slidingDirectionXZ).normalized
 						
-						val sigma = 1f
-						val phi = 2f
-						val tmax = 5f
-						//val slidingScale = (sigma / Math.pow(t, phi) - sigma / Math.pow(tmax, phi)).floatValue
-						//val slidingScale = 1.0f / Math.max(0.1, t).floatValue()
-						val offset = 0.25
-						val alpha = 2.0f
-						val tau = 8.0f
-						val slidingScale = (alpha - offset) * Math.exp(-t / tau) + offset
+						val slidingScale = computeSlidingScale(t)
 						
 						val sign = 1.0f
 						val slidingVector = slidingDirection * slidingScale.floatValue * sign
@@ -250,15 +207,12 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 						info(slidingVector)
 						
 						return slidingVector
-						
 					}
 
 					return new Vector3()
 				].values.reduce[p1, p2 | new Vector3(p1.getX() + p2.getX(), p1.getY() + p2.getY(), p1.getZ() + p2.getZ())]
 		}
 		return sliding
-		
-		//return new Vector3()
 	}
 	
 	def switchTargetPoint() {
@@ -275,6 +229,27 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 				}
 			}
 		}
+	}
+
+	/** 
+	 * Computes the time associated to the closest distance d of the trajectory of the drones
+	 * @param d the minimum distance between the spatio-temporal trajectories
+	 * @param selfPosition the position of this drone
+	 * @param selfDirection the direction of this drone
+	 * @param otherPosition the position of the other drone
+	 * @param otherDirection the direction of the other drone
+	 */
+	private def computeCollisionTime(d : Float, selfPosition : Vector4, selfDirection : Vector3, otherPosition : Vector4, otherDirection : Vector3) : Float {
+		val coefA = Math.pow(selfDirection.getX() - otherDirection.getX(), 2) +
+			Math.pow(selfDirection.getY() - otherDirection.getY(), 2) +
+			Math.pow(selfDirection.getZ() - otherDirection.getZ(), 2)
+		var coefB = 2f * (selfPosition.getX() - otherPosition.getX()) * (selfDirection.getX() - otherDirection.getX()) +
+			2f * (selfPosition.getY() - otherPosition.getY()) * (selfDirection.getY() - otherDirection.getY()) +
+			2f * (selfPosition.getZ() - otherPosition.getZ()) * (selfDirection.getZ() - otherDirection.getZ())
+		val coefC = -Math.pow(d, 2)
+
+		val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
+		return ((-coefB + Math.sqrt(delta)) / (2 * coefA) / 2).floatValue 	// Note: I'm dividing by two but I don't know why
 	}
 }
 
