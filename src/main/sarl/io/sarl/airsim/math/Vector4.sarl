@@ -1,20 +1,14 @@
 package io.sarl.airsim.math
 
-import org.eclipse.xtend.lib.annotations.Accessors
-
 /**
  * Represents a 4D vector
  * @author Alexandre Lombard
  */
 class Vector4 {
-	@Accessors(PUBLIC_GETTER)
-	val x : Float
-	@Accessors(PUBLIC_GETTER)
-	val y: Float
-    @Accessors(PUBLIC_GETTER)
-	val z : Float
-	@Accessors(PUBLIC_GETTER)
-	val t: Float
+	public val x : Float
+	public val y : Float
+	public val z : Float
+	public val t : Float
 	
 	new() {
 		this.x = 0f
@@ -28,6 +22,22 @@ class Vector4 {
 		this.y = y
         this.z = z
         this.t = t
+	}
+
+	def getX() : Float {
+		return this.x
+	}
+
+	def getY() : Float {
+		return this.y
+	}
+
+	def getZ() : Float {
+		return this.z
+	}
+	
+	def getT() : Float {
+		return this.t
 	}
 
     def plus(v: Vector4) : Vector4 {

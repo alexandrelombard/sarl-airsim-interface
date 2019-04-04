@@ -1,16 +1,12 @@
 package io.sarl.airsim.math
 
-import org.eclipse.xtend.lib.annotations.Accessors
-
 /**
  * Represents a 2D vector
  * @author Alexandre Lombard
  */
 class Vector2 {
-	@Accessors(PUBLIC_GETTER)
-	val x : Float
-	@Accessors(PUBLIC_GETTER)
-	val y: Float
+	public val x : Float
+	public val y : Float
 	
 	new() {
 		this.x = 0f
@@ -20,6 +16,14 @@ class Vector2 {
 	new (x: Float, y: Float) {
 		this.x = x
 		this.y = y
+	}
+
+	def getX() : Float {
+		return this.x
+	}
+
+	def getY() : Float {
+		return this.y
 	}
 	
 	def operator_plus(v: Vector2) : Vector2 {

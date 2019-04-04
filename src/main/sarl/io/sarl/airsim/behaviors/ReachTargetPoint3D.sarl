@@ -31,8 +31,11 @@ import io.sarl.airsim.math.Vector4
 behavior ReachTargetPoint3D {
 	
 	private val targetRadius = 0.5f
+	private val startupDelayMs = 4000
 	private val periodMs = 100
 	private val avoidanceRadius = 1.5f
+	
+	private val zOffset = -2.0f
 
 	var targetPoint: Vector3 = null
 	
@@ -55,10 +58,10 @@ behavior ReachTargetPoint3D {
 		// Note: before the takeoff, the drone is not affected
 		emit (new Takeoff)
 
-		in(2000) [
+		in(startupDelayMs) [
 			every(periodMs) [
 				if(this.initialPose !== null && this.targetPoint !== null &&
-						(new Vector3(this.pose.position.x, this.pose.position.y, 0.0f) - new Vector3(this.targetPoint.x, this.targetPoint.y, 0.0f)).length() < targetRadius &&
+						(new Vector3(this.pose.position.getX(), this.pose.position.getY(), 0.0f) - new Vector3(this.targetPoint.getX(), this.targetPoint.getY(), 0.0f)).length() < targetRadius &&
 						this.velocity.length() < 0.1) {
 					// If we are at the target position, and if the velocity is almost null, we reset the drone position
 					//reset()
@@ -68,11 +71,11 @@ behavior ReachTargetPoint3D {
 						if(this.targetPoint !== null) {
 							if((this.targetPoint - new Vector3(this.initialPose.position)).length() < 1e-2f) {
 								this.targetPoint = new Vector3(
-									-this.initialPose.position.x,
-									-this.initialPose.position.y,
-									this.initialPose.position.z)
+									-this.initialPose.position.getX(),
+									-this.initialPose.position.getY(),
+									this.initialPose.position.getZ() + zOffset)
 							} else {
-								this.targetPoint = new Vector3(this.initialPose.position)
+								this.targetPoint = new Vector3(this.initialPose.position.getX(), this.initialPose.position.getY(), this.initialPose.position.getZ() + zOffset)
 							}
 						}
 					}
@@ -80,7 +83,7 @@ behavior ReachTargetPoint3D {
 					// Note: the computed force is scaled to reduce its strength
 					val movementForce = computeForce() * 0.1f
 	
-					emit(new MoveByVelocity(movementForce.x, movementForce.y, movementForce.z, periodMs / 1000.0f))
+					emit(new MoveByVelocity(movementForce.getX(), movementForce.getY(), movementForce.getZ(), periodMs / 1000.0f))
 				}
 			]
 		]
@@ -96,9 +99,9 @@ behavior ReachTargetPoint3D {
 			
 			if(this.targetPoint === null) {
 				this.targetPoint = new Vector3(
-					-this.pose.position.x,
-					-this.pose.position.y,
-					this.pose.position.z)	// We don't invert the Z
+					-this.pose.position.getX(),
+					-this.pose.position.getY(),
+					this.pose.position.getZ() + zOffset) 		// We don't invert the Z, but we add an offset so it's not on the ground
 			}
 			
 			emit(new NotifyPose(this.pose))
@@ -159,7 +162,7 @@ behavior ReachTargetPoint3D {
 		val position = new Vector3(this.pose.position)
 		
 		// Checking values
-		if(Double.isNaN(targetPoint.x) || Double.isNaN(position.x))
+		if(Double.isNaN(targetPoint.getX()) || Double.isNaN(position.getX()))
 			return new Vector3()
 			
 		// If the drone is within a given radius around its target point, we stop moving (note: this will oscillate
@@ -182,9 +185,9 @@ behavior ReachTargetPoint3D {
 		val result = if(sliding === null) attraction else (sliding * 5f) + attraction
 		//val result = attraction
 
-		//info("Attraction: " + attraction.x + ", " + attraction.y + ", " + attraction.z)
-		//info("Sliding: " + sliding.x + ", " + sliding.y + ", " + sliding.z)
-		//info("Force: " + result.x + ", " + result.y + ", " + result.z)
+		//info("Attraction: " + attraction.getX() + ", " + attraction.getY() + ", " + attraction.getZ())
+		//info("Sliding: " + sliding.getX() + ", " + sliding.getY() + ", " + sliding.getZ())
+		//info("Force: " + result.getX() + ", " + result.getY() + ", " + result.getZ())
 
 		return result
 		//return new Vector3()
@@ -202,43 +205,54 @@ behavior ReachTargetPoint3D {
 				.filter [ k, v | v.pose !== null && v.state !== null ]
 				.mapValues [
 							
-					val selfPosition = new Vector4(position.x, position.y, position.z, 0f)
+					val selfPosition = new Vector4(position.getX(), position.getY(), position.getZ(), 0f)
 					val selfDirection = this.velocity
-					val otherPosition = new Vector4(it.pose.position.x, it.pose.position.y, it.pose.position.z, 0f)
+					val otherPosition = new Vector4(it.pose.position.getX(), it.pose.position.getY(), it.pose.position.getZ(), 0f)
 					val otherDirection = it.state.linearVelocity
 					
 					// If some data are erroneous, we ignore them
-					if(Float.isNaN(otherPosition.x) || Float.isNaN(selfPosition.x) || Float.isNaN(otherDirection.x) || Float.isNaN(selfDirection.x))
+					if(Float.isNaN(otherPosition.getX()) || Float.isNaN(selfPosition.getX()) || Float.isNaN(otherDirection.getX()) || Float.isNaN(selfDirection.getX()))
 						return new Vector3()
 					
 					//var d = Math.abs(
-					//			otherPosition.minus(selfPosition).cross(new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1f)).dot(new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1f))) /
-					//			(new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1f).cross(new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1f)).length())
+					//			otherPosition.minus(selfPosition).cross(new Vector4(selfDirection.getX(), selfDirection.getY(), selfDirection.getZ(), 1f)).dot(new Vector4(otherDirection.getX(), otherDirection.getY(), otherDirection.getZ(), 1f))) /
+					//			(new Vector4(selfDirection.getX(), selfDirection.getY(), selfDirection.getZ(), 1f).cross(new Vector4(otherDirection.getX(), otherDirection.getY(), otherDirection.getZ(), 1f)).length())
 	
+					//val a0 = selfPosition
+					//val b0 = otherPosition
+					//val va = new Vector4(selfDirection.getX(), selfDirection.getY(), selfDirection.getZ(), 1.0f)
+					//val vb = new Vector4(otherDirection.getX(), otherDirection.getY(), otherDirection.getZ(), 1.0f)
+					//val A: Float = va.squaredNorm()
+					//val B: Float = 2 * (va.dot(a0) - va.dot(b0))
+					//val C: Float = 2 * va.dot(vb)
+					//val D: Float = 2 * (vb.dot(b0) - vb.dot(a0))
+					//val E: Float = vb.squaredNorm()
+					//val F: Float = a0.squaredNorm() + b0.squaredNorm()
+					//
+					//var d = Math.sqrt(Math.abs((B * C * D + B * B * E + C * C * F + A * (D * D - 4 * E * F)) / (C * C - 4 * A * E)))
+					
 					val a0 = selfPosition
 					val b0 = otherPosition
-					val va = new Vector4(selfDirection.x, selfDirection.y, selfDirection.z, 1.0f)
-					val vb = new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1.0f)
-					val A: Float = va.squaredNorm()
-					val B: Float = 2 * (va.dot(a0) - va.dot(b0))
-					val C: Float = 2 * va.dot(vb)
-					val D: Float = 2 * (vb.dot(b0) - vb.dot(a0))
-					val E: Float = vb.squaredNorm()
-					val F: Float = a0.squaredNorm() + b0.squaredNorm()
-
-					//var d = Math.sqrt(Math.abs((B * C * D + B * B * E + C * C * F + A * (D * D - 4 * E * F)) / (C * C - 4 * A * E)))
-					val e1 = B * C * D + B * B * E + C * C * F
-					val e2 = A * (D * D - 4 * E * F)
-					val e3 = C * C - 4 * A * E
-					var d = Math.sqrt(Math.abs((e1 + e2) / e3))
-
+					val va = new Vector4(selfDirection.getX(), selfDirection.getY(), selfDirection.getZ(), 1.0f)
+					val vb = new Vector4(otherDirection.getX(), otherDirection.getY(), otherDirection.getZ(), 1.0f)
+					val a = va.squaredNorm()
+					val b = va.dot(vb)
+					val c = vb.squaredNorm()
+					val w0 = (a0 - b0)
+					val _d = va.dot(w0)
+					val e = vb.dot(w0)
+					
+					val e1 = a0 - b0
+					val e2 = va * (b * e - c * _d) - vb * (a * e - b * _d)
+					val e3 = (a * c - b * b)
+					var d = (e1 + e2 * (1.0f / e3)).norm()
 					println("d: " + d)
 
 					if(Double.isNaN(d)) {
 						// If d is NaN it means that the direction are colinear
 						// If so, the distance between the lines is the distance of a point from a line to a point
 						// of the other line 
-						//val u = new Vector4(otherDirection.x, otherDirection.y, otherDirection.z, 1f)
+						//val u = new Vector4(otherDirection.getX(), otherDirection.getY(), otherDirection.getZ(), 1f)
 						//d = selfPosition.minus(otherPosition).cross(u).length() / u.length()
 						d = 0.0f	// TODO
 						
@@ -250,8 +264,8 @@ behavior ReachTargetPoint3D {
 						new Vector3()
 					} else {
 						// There may be a collision
-						val coefA = Math.pow(selfDirection.x - otherDirection.x, 2) + Math.pow(selfDirection.y - otherDirection.y, 2) + Math.pow(selfDirection.z - otherDirection.z, 2)
-						var coefB = 2f * (selfPosition.x - otherPosition.x) * (selfDirection.x - otherDirection.x) + 2f * (selfPosition.y - otherPosition.y) * (selfDirection.y - otherDirection.y)  + 2f * (selfPosition.z - otherPosition.z) * (selfDirection.z - otherDirection.z)
+						val coefA = Math.pow(selfDirection.getX() - otherDirection.getX(), 2) + Math.pow(selfDirection.getY() - otherDirection.getY(), 2) + Math.pow(selfDirection.getZ() - otherDirection.getZ(), 2)
+						var coefB = 2f * (selfPosition.getX() - otherPosition.getX()) * (selfDirection.getX() - otherDirection.getX()) + 2f * (selfPosition.getY() - otherPosition.getY()) * (selfDirection.getY() - otherDirection.getY())  + 2f * (selfPosition.getZ() - otherPosition.getZ()) * (selfDirection.getZ() - otherDirection.getZ())
 						val coefC = -Math.pow(d, 2)
 						
 						val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
@@ -262,10 +276,12 @@ behavior ReachTargetPoint3D {
 						if(t < 1e-3f)
 							return new Vector3() // Too late, we ignore to avoid errors further
 						
-						val selfClosePosition = new Vector4(selfPosition.x + selfDirection.x * t, selfPosition.y + selfDirection.y * t, selfPosition.z + selfDirection.z * t, t)
-						val otherClosePosition = new Vector4(otherPosition.x + otherDirection.x * t, otherPosition.y + otherDirection.y * t, otherPosition.z + otherDirection.z * t, t)
-						//info("---\n" + selfPosition.x + ", " + selfPosition.y + " ; " + selfDirection.x + ", " + selfDirection.y + "\n" +
-						//		otherPosition.x + ", " + otherPosition.y + " ; " + otherDirection.x + ", " + otherDirection.y)
+						val selfClosePosition = new Vector4(selfPosition.getX() + selfDirection.getX() * t, selfPosition.getY() + selfDirection.getY() * t, selfPosition.getZ() + selfDirection.getZ() * t, t)
+						val otherClosePosition = new Vector4(otherPosition.getX() + otherDirection.getX() * t, otherPosition.getY() + otherDirection.getY() * t, otherPosition.getZ() + otherDirection.getZ() * t, t)
+						//info("---\n" + selfPosition.getX() + ", " + selfPosition.getY() + " ; " + selfDirection.getX() + ", " + selfDirection.getY() + "\n" +
+						//		otherPosition.getX() + ", " + otherPosition.getY() + " ; " + otherDirection.getX() + ", " + otherDirection.getY())
+						
+						info("Self close position: " + selfClosePosition)
 						
 						val obstacleDirection = (otherClosePosition - selfPosition).normalized()
 						//val obstacleCloseDirection = otherClosePosition.minus(selfClosePosition).normalized()
@@ -273,10 +289,16 @@ behavior ReachTargetPoint3D {
 						if((targetPoint - selfPosition.toVector3()).dot(obstacleDirection.toVector3()) < 0.0f)
 							return new Vector3()
 						
-						//val slidingDirection = new Vector3(-obstacleDirection.y, obstacleDirection.x, 0)
-						val otu = (this.targetPoint - selfPosition.toVector3()).normalized()
-						val vu = new Vector3(selfDirection.x, selfDirection.y, selfDirection.z).normalized()
-						val slidingDirection: Vector3 = otu.cross(vu)
+						// 2D avoidance strategy
+						//val slidingDirection = new Vector3(-obstacleDirection.getY(), obstacleDirection.getX(), 0.0f)
+						// Try #01 3D avoidance strategy
+						//val otu = (this.targetPoint - selfPosition.toVector3()).normalized()
+						//val vu = new Vector3(selfDirection.getX(), selfDirection.getY(), selfDirection.getZ()).normalized()
+						//val slidingDirection: Vector3 = otu.cross(vu)
+						// Try #02 3D avoidance strategy
+						val slidingDirectionXY = new Vector3(-obstacleDirection.getY(), obstacleDirection.getX(), 0.0f)
+						val slidingDirectionXZ = new Vector3(obstacleDirection.getZ(), 0.0f, -obstacleDirection.getX())
+						val slidingDirection = (slidingDirectionXY + slidingDirectionXZ).normalized
 						
 						val sigma = 1f
 						val phi = 2f
@@ -292,13 +314,13 @@ behavior ReachTargetPoint3D {
 						val slidingVector = slidingDirection * slidingScale.floatValue * sign
 						
 						info(slidingVector)
-
-						slidingDirection * slidingScale.floatValue * sign
+						
+						return slidingVector
 						
 					}
 
-					new Vector3()
-				].values.reduce[p1, p2 | new Vector3(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z)]
+					return new Vector3()
+				].values.reduce[p1, p2 | new Vector3(p1.getX() + p2.getX(), p1.getY() + p2.getY(), p1.getZ() + p2.getZ())]
 		}
 		return sliding
 		
@@ -310,11 +332,12 @@ behavior ReachTargetPoint3D {
 			if(this.targetPoint !== null) {
 				if((this.targetPoint - new Vector3(this.initialPose.position)).length() < 1e-2f) {
 					this.targetPoint = new Vector3(
-						-this.initialPose.position.x,
-						-this.initialPose.position.y,
-						this.initialPose.position.z)
+						-this.initialPose.position.getX(),
+						-this.initialPose.position.getY(),
+						this.initialPose.position.getZ() + zOffset)
 				} else {
-					this.targetPoint = new Vector3(this.initialPose.position)
+					this.targetPoint = new Vector3(this.initialPose.position.getX(), this.initialPose.position.getY(),
+						this.initialPose.position.getZ() + zOffset)
 				}
 			}
 		}
@@ -330,23 +353,23 @@ behavior ReachTargetPoint3D {
  * @author Alexandre Lombard
  */
 class DroneState {
-	@Accessors(PUBLIC_GETTER)
-	val pose : Pose
-	@Accessors(PUBLIC_GETTER)
-	val state : KinematicsState
+	public val pose : Pose
+	public val state : KinematicsState
 
-	new(pose : Pose, state: KinematicsState) {
+	new(pose : Pose, state : KinematicsState) {
 		this.pose = pose
 		this.state = state
 	}
-	
-	new(previousState: DroneState, pose: Pose) {
+
+	new(previousState : DroneState, pose : Pose) {
 		this.pose = pose
 		this.state = previousState.state
 	}
-	
-	new(previousState: DroneState, kinematicsState: KinematicsState) {
+
+	new(previousState : DroneState, kinematicsState : KinematicsState) {
 		this.pose = previousState.pose
 		this.state = kinematicsState
 	}
 }
+
+

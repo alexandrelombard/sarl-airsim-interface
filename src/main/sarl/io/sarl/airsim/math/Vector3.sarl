@@ -1,7 +1,5 @@
 package io.sarl.airsim.math
 
-import org.eclipse.xtend.lib.annotations.Accessors
-
 import fr.utbm.airsim.api.Vector3r
 
 /**
@@ -9,12 +7,9 @@ import fr.utbm.airsim.api.Vector3r
  * @author Alexandre Lombard
  */
 class Vector3 {
-	@Accessors(PUBLIC_GETTER)
-	val x : Float
-	@Accessors(PUBLIC_GETTER)
-	val y: Float
-	@Accessors(PUBLIC_GETTER)
-	val z: Float
+	public val x : Float
+	public val y: Float
+	public val z: Float
 	
 	new() {
 		this.x = 0f
@@ -32,6 +27,18 @@ class Vector3 {
 		this.x = v.x
 		this.y = v.y
 		this.z = v.z
+	}
+	
+	def getX(): Float {
+		return this.x
+	}
+
+	def getY() : Float {
+		return this.y
+	}
+
+	def getZ() : Float {
+		return this.z
 	}
 
 	def cross(v: Vector3): Vector3 {

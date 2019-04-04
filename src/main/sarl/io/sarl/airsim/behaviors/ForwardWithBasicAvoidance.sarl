@@ -24,10 +24,11 @@ import java.util.List
  */
 behavior ForwardWithBasicAvoidance {
 	uses Logging, DefaultContextInteractions, Schedules
+	
 
 	var initialPose: Pose = null
-	var targetDir: Float = 0f
-	var direction : Float = 0f
+	var targetDir: Float = 0.0f
+	var direction : Float = 0.0f
 
 	on Initialize {
 		info("Drone agent starting...")

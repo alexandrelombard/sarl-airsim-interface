@@ -170,11 +170,12 @@ behavior ReachTargetPoint {
 
 		synchronized(this.neighbours) {
 			sliding = neighbours
-				.filter [ k, v | v.pose !== null && v.state !== null ]
+				.filter [k, v | v.pose !== null && v.state !== null]
 				.mapValues [			
 					val selfPosition = new Vector3r(position.x, position.y, 0f)	// We ignore Z
 					val selfDirection = this.velocity
-					val otherPosition = new Vector3r(it.pose.position.x, it.pose.position.y, 0f)	// We ignore Z
+					val otherPosition = new Vector3r(it.pose.position.x, it.pose.position.y, 0f
+					)	// We ignore Z
 					val otherDirection = it.state.linearVelocity
 					
 					// If some data are erroneous, we ignore them
@@ -366,10 +367,8 @@ behavior ReachTargetPoint {
  * @author Alexandre Lombard
  */
 class DroneState {
-	@Accessors(PUBLIC_GETTER)
-	val pose : Pose
-	@Accessors(PUBLIC_GETTER)
-	val state : KinematicsState
+	public val pose : Pose
+	public val state : KinematicsState
 
 	new(pose : Pose, state: KinematicsState) {
 		this.pose = pose
