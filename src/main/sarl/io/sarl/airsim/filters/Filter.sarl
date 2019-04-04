@@ -1,0 +1,18 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.filters
+
+/** 
+ * Generic interface for filters
+ * @author Alexandre Lombard
+ * 
+ */
+interface Filter<T> {
+	/**
+	 * Computes the filtered value from the input v
+	 * @param v the input
+	 * @return the filtered output
+	 */
+	def filter(v: T): T
+}

@@ -1,0 +1,30 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.filters.mean
+
+import io.sarl.airsim.math.Vector3
+
+/** 
+ * Mean filter for Vector3 objects
+ * @author Alexandre
+ * 
+ */
+class Vector3MeanFilter extends AbstractMeanFilter<Vector3> {
+	
+	/**
+	 * Builds the mean filter with the given default value
+	 * @param size the size of the kernel
+	 * @param defaultValue the default value when building the kernel
+	 */
+	new (size: Integer, defaultValue: Vector3 = new Vector3()) {
+		super(size, defaultValue)
+	}
+	
+	def filter(v : Vector3) : Vector3 {
+		addValue(v)
+		
+		return values.map[it * (1.0f / values.size)].reduce[p1, p2 | p1 + p2]
+	}
+	
+}

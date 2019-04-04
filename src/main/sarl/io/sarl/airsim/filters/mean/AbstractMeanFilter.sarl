@@ -1,0 +1,33 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.filters.mean
+
+import java.util.List
+import io.sarl.airsim.filters.Filter
+
+/** 
+ * Abstract mean filter
+ * @author Alexandre Lombard
+ * 
+ */
+abstract class AbstractMeanFilter<T> implements Filter<T> {
+
+	/** The kernel of the filter */
+	protected val values: List<T>
+	
+	/** The current index for the position to add a new value */
+	var currentIndex = 0
+	
+	new(size: Integer, defaultValue: T) {
+		this.values = newArrayList
+		for(i : 0..size) {
+			this.values.add(defaultValue)
+		}
+	}
+	
+	protected def addValue(value: T) {
+		values.set(currentIndex, value)
+		currentIndex = (currentIndex + 1) % values.length
+	}
+}

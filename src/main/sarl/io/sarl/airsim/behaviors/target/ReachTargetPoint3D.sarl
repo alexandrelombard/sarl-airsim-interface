@@ -12,6 +12,7 @@ import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Initialize
 import io.sarl.core.Logging
 import io.sarl.core.Schedules
+import io.sarl.airsim.filters.mean.Vector3MeanFilter
 
 /** 
  * Drone behavior: defines a target point (the opposite of the start point) and try to reach this target
@@ -20,16 +21,17 @@ import io.sarl.core.Schedules
  * 
  */
 behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
+
+	uses Logging, DefaultContextInteractions, Schedules
 	
-	val targetRadius = 0.5f
+	val targetRadius = 1.0f
 	val startupDelayMs = 4000
 	val periodMs = 100
 	val avoidanceRadius = 1.5f
 	
 	val zOffset = -2.0f
-
 	
-	uses Logging, DefaultContextInteractions, Schedules
+	val meanFilter = new Vector3MeanFilter(5)
 
 	on Initialize {
 		info("Drone agent is starting...")
@@ -60,7 +62,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					}
 				} else {
 					// Note: the computed force is scaled to reduce its strength
-					val movementForce = computeForce() * 0.1f
+					val movementForce = meanFilter.filter(computeForce() * 0.1f)
 	
 					emit(new MoveByVelocity(movementForce.getX(), movementForce.getY(), movementForce.getZ(), periodMs / 1000.0f))
 				}
@@ -127,7 +129,6 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 			sliding = neighbours
 				.filter [ k, v | v.pose !== null && v.state !== null ]
 				.mapValues [
-							
 					val selfPosition = new Vector4(position.getX(), position.getY(), position.getZ(), 0f)
 					val selfDirection = this.velocity
 					val otherPosition = new Vector4(it.pose.position.getX(), it.pose.position.getY(), it.pose.position.getZ(), 0f)
@@ -200,8 +201,6 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 						
 						val sign = 1.0f
 						val slidingVector = slidingDirection * slidingScale.floatValue * sign
-						
-						info(slidingVector)
 						
 						return slidingVector
 					}
