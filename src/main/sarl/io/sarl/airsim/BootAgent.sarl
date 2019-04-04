@@ -16,7 +16,7 @@ agent BootAgent {
 	uses Lifecycle
 	
 	/** The total number of agents to spawn */
-	val agentToSpawn = 4
+	val agentToSpawn = 10
 
 	on Initialize {
 		// Spawn the simulation controller agent

@@ -178,11 +178,8 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 						if(t < 1e-3f)
 							return new Vector3() // Too late, we ignore to avoid errors further
 						
-						val selfClosePosition = new Vector4(selfPosition.getX() + selfDirection.getX() * t, selfPosition.getY() + selfDirection.getY() * t, selfPosition.getZ() + selfDirection.getZ() * t, t)
 						val otherClosePosition = new Vector4(otherPosition.getX() + otherDirection.getX() * t, otherPosition.getY() + otherDirection.getY() * t, otherPosition.getZ() + otherDirection.getZ() * t, t)
-						
-						info("Self close position: " + selfClosePosition)
-						
+
 						val obstacleDirection = (otherClosePosition - selfPosition).normalized()
 						
 						if((targetPoint - selfPosition.toVector3()).dot(obstacleDirection.toVector3()) < 0.0f)
