@@ -1,7 +1,7 @@
 /** 
  * 
  */
-package io.sarl.airsim.behaviors
+package io.sarl.airsim.behaviors.forward
 
 import fr.utbm.airsim.api.Pose
 import io.sarl.airsim.influences.MoveByVelocity
@@ -30,6 +30,10 @@ behavior ForwardWithBasicAvoidance {
 	var targetDir: Float = 0.0f
 	var direction : Float = 0.0f
 
+	/**
+	 * The following strategy is initialized: the drone take-off, and after a given amount of time, it moves in
+	 * a direction, the direction is computed every time a perception is received
+	 */
 	on Initialize {
 		info("Drone agent starting...")
 
@@ -38,7 +42,7 @@ behavior ForwardWithBasicAvoidance {
 		// Note: X is forward
 		in(3000) [
 			every(1000) [
-				val dir = this.direction
+				val dir = synchronized(this.direction) { this.direction }
 				emit(new MoveByVelocity(
 					Math.cos(dir).floatValue,
 					Math.sin(dir).floatValue,
@@ -53,6 +57,9 @@ behavior ForwardWithBasicAvoidance {
 		//
 	}
 	
+	/**
+	 * On Lidar perceptions, a repulsion force can be computed, it will be used to define a new direction 
+	 */
 	on LidarDataPerception {
 		val lidarData = occurrence.lidarData
 		val pointCloud = lidarData.pointCloud
@@ -73,11 +80,16 @@ behavior ForwardWithBasicAvoidance {
 
 		val resultingForce = repulsionForces.reduce[p1, p2|p1 + p2]
 
-		this.direction = if(resultingForce === null) this.targetDir else resultingForce.toAngle + Math.PI.floatValue / 2f
+		synchronized(this.direction) {
+			this.direction = if(resultingForce === null) this.targetDir else resultingForce.toAngle + Math.PI.floatValue / 2f
+		}
 	}
 	
+	/**
+	 * On pose perception, the internal state of the drone is updated
+	 */
 	on SimPosePerception {
-		synchronized (this) {
+		synchronized (this.direction) {
 			if (initialPose === null) {
 				this.initialPose = occurrence.pose
 				this.targetDir = this.initialPose.orientation.toEuleurAngles.z

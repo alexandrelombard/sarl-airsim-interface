@@ -1,101 +1,184 @@
 package io.sarl.airsim.math
 
 /**
- * Represents a 4D vector
+ * Represents a 4D vector (immutable)
  * @author Alexandre Lombard
  */
-class Vector4 {
+class Vector4 implements Vector<Vector4> {
+
+	/** X coordinate */
 	public val x : Float
+	/** Y coordinate */
 	public val y : Float
+	/** Z coordinate */
 	public val z : Float
+	/** T coordinate */
 	public val t : Float
 	
+	val squaredNorm: Float
+	val norm: Float
+	
+	/**
+	 * Builds a null-vector
+	 */
 	new() {
-		this.x = 0f
-		this.y = 0f
-        this.z = 0f
-        this.t = 0f
+		this(0.0f, 0.0f, 0.0f, 0.0f)
 	}
 	
+	/**
+	 * Builds a vector with the given parameters
+	 * @param x the X coordinate
+	 * @param y the Y coordinate
+	 * @param z the Z coordinate
+	 * @param t the T coordinate
+	 */
 	new (x: Float, y: Float, z: Float, t: Float) {
 		this.x = x
 		this.y = y
         this.z = z
         this.t = t
+        
+        // Note: The following fields should be lazily initialized 
+		this.squaredNorm = x * x + y * y + z * z + t * t
+		this.norm = Math.sqrt(this.squaredNorm).floatValue
 	}
 
+	/**
+	 * Getter for X
+	 * @return X
+	 */
 	def getX() : Float {
 		return this.x
 	}
 
+	/** 
+	 * Getter for Y
+	 * @return Y
+	 */
 	def getY() : Float {
 		return this.y
 	}
 
+	/** 
+	 * Getter for Z
+	 * @return Z
+	 */
 	def getZ() : Float {
 		return this.z
 	}
-	
+
+	/** 
+	 * Getter for T
+	 * @return T
+	 */
 	def getT() : Float {
 		return this.t
 	}
 
-    def plus(v: Vector4) : Vector4 {
-        return this + v
-    }
-	
-	def operator_plus(v: Vector4) : Vector4 {
+	/** 
+	 * Operator plus, computes the sum of two vectors (this and v)
+	 * @param v the vector to add
+	 * @return the sum of this and v
+	 */
+	override operator_plus(v: Vector4) : Vector4 {
 		return new Vector4(x + v.x, y + v.y, z + v.z, t + v.t)
 	}
 
-    def minus(v: Vector4) : Vector4 {
-        return this - v
-    }
-	
-	def operator_minus(v: Vector4) : Vector4 {
+	/** 
+	 * Operator minus, computes the difference of two vectors (this and v)
+	 * @param v the vector to subtract
+	 * @return the difference of this and v
+	 */
+	override operator_minus(v: Vector4) : Vector4 {
 		return new Vector4(x - v.x, y - v.y, z - v.z, t - v.t)
 	}
 
-    def times(l: Float) : Vector4 {
-        return this * l
-    }
-	
-	def operator_multiply(l: Float) : Vector4 {
+	/** 
+	 * Operator multiply, computes the product of this vector by a scalar
+	 * @param l the scalar
+	 * @return the product of this by the given scalar
+	 */
+	override operator_multiply(l: Float) : Vector4 {
 		return new Vector4(x * l, y * l, z * l, t * l)
 	}
 
-	def operator_multiply(l : Float, v : Vector4) : Vector4 {
+	/** 
+	 * Operator multiply, computes the product of this vector by a scalar
+	 * @param l the scalar
+	 * @return the product of this by the given scalar
+	 */
+	override operator_multiply(l : Float, v : Vector4) : Vector4 {
 		return new Vector4(v.x * l, v.y * l, v.z * l, v.t * l)
 	}
 	
-	def operator_minus(): Vector4 {
+	/**
+	 * Unary minus operator
+	 */
+	override operator_minus(): Vector4 {
 		return new Vector4(-x, -y, -z, -t)
 	}
 
-    def dot(v: Vector4) : Float {
+	/**
+	 * Computes the dot product of this vector and v
+	 * @param v the other vector
+	 * @return the dot product
+	 */
+    override dot(v: Vector4) : Float {
         return x * v.x + y * v.y + z * v.z + t * v.t
     }
+
+	/** 
+	 * Gets the squared norm of this vector
+	 * @return the squared norm of this vector
+	 */
+	override squaredNorm() : Float {
+		return this.squaredNorm
+	}
 	
-	def squaredNorm() : Float {
-		return x * x + y * y + z * z + t * t
+	/**
+	 * Gets the norm of this vector
+	 * @return the norm of this vector
+	 */
+	override norm(): Float {
+		return this.norm
 	}
 
-    def normalized() : Vector4 {
-        return this * (1.0f / norm())
-    }
-	
-	def norm(): Float {
-		return Math.sqrt(squaredNorm()).floatValue
-	}
-
-    def length() : Float {
-        return norm()
-    }
-
+	/**
+	 * Converts this to a Vector3 (excluding the T coordinate)
+	 * @return a Vector3 with (X, Y, Z) coordinates
+	 */
 	def toVector3(): Vector3 {
 		return new Vector3(x, y, z)
 	}
-	
+
+	/** 
+	 * Converts this to a Vector3 (excluding the T coordinate)
+	 * @return a Vector3 with (X, Y, Z) coordinates
+	 */
+	def xyz(): Vector3 {
+		return toVector3()
+	}
+
+	/** 
+	 * Converts this to a Vector2 (excluding the Z, T coordinate)
+	 * @return a Vector2 with (X, Y) coordinates
+	 */
+	def toVector2(): Vector2 {
+		return new Vector2(x, y)
+	}
+
+	/** 
+	 * Converts this to a Vector2 (excluding the Z, T coordinate)
+	 * @return a Vector2 with (X, Y) coordinates
+	 */
+	def xy(): Vector2 {
+		return toVector2()
+	}
+
+	/** 
+	 * Gets the String representation of this vector
+	 * @return a String showing the coordinates of this vector 
+	 */
 	override toString() : String {
 		return "[" + x + ", " + y + ", " + z + ", " + t + "]"
 	}

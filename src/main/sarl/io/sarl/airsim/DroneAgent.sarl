@@ -3,11 +3,9 @@
  */
 package io.sarl.airsim
 
-import io.sarl.airsim.behaviors.ForwardWithBasicAvoidance
+import io.sarl.airsim.behaviors.target.ReachTargetPoint3D
 import io.sarl.core.Behaviors
 import io.sarl.core.Initialize
-import io.sarl.airsim.behaviors.ReachTargetPoint
-import io.sarl.airsim.behaviors.ReachTargetPoint3D
 
 /** 
  * Agent in charge of driving a drone

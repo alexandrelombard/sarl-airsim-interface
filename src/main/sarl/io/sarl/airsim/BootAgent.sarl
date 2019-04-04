@@ -5,26 +5,31 @@ package io.sarl.airsim
 
 import io.sarl.core.Initialize
 import io.sarl.core.Lifecycle
-import io.sarl.core.Logging
 
 /** 
  * Agent in charge of starting the other agents (initial state)
  * @author Alexandre Lombard
  * 
  */
+@SuppressWarnings("discouraged_reference")
 agent BootAgent {
-	uses Logging, Lifecycle
+	uses Lifecycle
+	
+	/** The total number of agents to spawn */
+	val agentToSpawn = 4
 
 	on Initialize {
+		// Spawn the simulation controller agent
 		spawn(SimulationControllerAgent)
+		
+		// Run the drone spawning strategy
+		runSpawnStrategy()
+	}
+	
+	def runSpawnStrategy() {
 		Thread.sleep(2000)
-//		spawn(DroneAgent)
-//		Thread.sleep(3000)
-//		spawn(DroneAgent)
-//		spawn(DroneAgent)
-//		Thread.sleep(1000)
-//		spawn(DroneAgent)
-		for(var idx = 0; idx < 4; idx++) {
+		
+		for (var idx = 0; idx < agentToSpawn; idx++) {
 			spawn(DroneAgent)
 			Thread.sleep((2000 * Math.random()).intValue)
 		}

@@ -1,0 +1,109 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.math
+
+/** 
+ * Generic interface for vectors
+ * @author Alexandre Lombard
+ * 
+ */
+interface Vector<T extends Vector<T>> {
+
+	/** 
+	 * Gets the length of this vector (equivalent to norm())
+	 * @return the norm of this vector
+	 */
+	def length() : Float {
+		return this.norm()
+	}
+
+	/** 
+	 * Gets the squared norm of this vector
+	 * @return the squared norm of this vector
+	 */
+	def squaredNorm() : Float
+
+	/** 
+	 * Gets the norm of this vector
+	 * @return the norm of this vector
+	 */
+	def norm() : Float {
+		return Math.sqrt(squaredNorm()).floatValue
+	}
+
+	/** 
+	 * Gets the normalized form of this vector
+	 * @return the normalized vector
+	 */
+	def normalized() : T {
+		return this * (1.0f / norm())
+	}
+
+	/** 
+	 * Operator plus, computes the sum of two vectors (this and v)
+	 * @param v the vector to add
+	 * @return the sum of this and v
+	 */
+	def operator_plus(v : T) : T
+
+	/** 
+	 * Plus function, equivalent to this + v
+	 * @param v the vector to add
+	 * @return the sum of this and v
+	 */
+    def plus(v : T) : T {
+    	return this + v
+    }
+
+	/** 
+	 * Minus function, equivalent to this - v
+	 * @param v the vector to subtract
+	 * @return the difference of this and v
+	 */
+	def minus(v : T) : T {
+		return this - v
+	}
+
+	/** 
+	 * Operator minus, computes the difference of two vectors (this and v)
+	 * @param v the vector to subtract
+	 * @return the difference of this and v
+	 */
+	def operator_minus(v : T) : T
+
+	/** 
+	 * Times function, equivalent to this * l, computes the product of this vector by a scalar
+	 * @param l the scalar
+	 * @return the product of this by the given scalar
+	 */
+	def times(l : Float) : T {
+		return this * l
+	}
+
+	/** 
+	 * Operator multiply, computes the product of this vector by a scalar
+	 * @param l the scalar
+	 * @return the product of this by the given scalar
+	 */
+	def operator_multiply(l : Float) : T
+
+	/** 
+	 * Operator multiply, computes the product of this vector by a scalar
+	 * @param l the scalar
+	 * @return the product of this by the given scalar
+	 */
+	def operator_multiply(l : Float, v : T) : T
+
+	/** 
+	 * Unary minus operator
+	 */
+	def operator_minus() : T
+
+	/** 
+	 * Computes the dot product of this vector and v
+	 * @param v the other vector
+	 * @return the dot product
+	 */
+	def dot(v : T) : Float
+}

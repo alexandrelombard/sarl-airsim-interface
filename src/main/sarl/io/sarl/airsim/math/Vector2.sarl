@@ -1,47 +1,87 @@
 package io.sarl.airsim.math
 
 /**
- * Represents a 2D vector
+ * Represents a 2D vector (immutable)
  * @author Alexandre Lombard
  */
-class Vector2 {
+class Vector2 implements Vector<Vector2> {
+	/** X coordinate */
 	public val x : Float
+	/** Y coordinate */
 	public val y : Float
 	
+	/**
+	 * Builds a null-vector
+	 */
 	new() {
-		this.x = 0f
-		this.y = 0f
+		this(0.0f, 0.0f)
 	}
 	
+	/**
+	 * Builds a vector with the given parameters
+	 * @param x the X coordinate
+	 * @param y the Y coordinate
+	 */
 	new (x: Float, y: Float) {
 		this.x = x
 		this.y = y
 	}
 
+	/**
+	 * Getter for X
+	 * @return X
+	 */
 	def getX() : Float {
 		return this.x
 	}
 
+	/**
+	 * Getter for Y
+	 * @return Y
+	 */
 	def getY() : Float {
 		return this.y
 	}
 	
+	/** 
+	 * Operator plus, computes the sum of two vectors (this and v)
+	 * @param v the vector to add
+	 * @return the sum of this and v
+	 */
 	def operator_plus(v: Vector2) : Vector2 {
 		return new Vector2(x + v.x, y + v.y)
 	}
 	
+	/** 
+	 * Operator minus, computes the difference of two vectors (this and v)
+	 * @param v the vector to subtract
+	 * @return the difference of this and v
+	 */
 	def operator_minus(v: Vector2) : Vector2 {
 		return new Vector2(x - v.x, y - v.y)
 	}
 	
+	/** 
+	 * Operator multiply, computes the product of this vector by a scalar
+	 * @param l the scalar
+	 * @return the product of this by the given scalar
+	 */
 	def operator_multiply(l: Float) : Vector2 {
 		return new Vector2(x * l, y * l)
 	}
 
+	/** 
+	 * Operator multiply, computes the product of this vector by a scalar
+	 * @param l the scalar
+	 * @return the product of this by the given scalar
+	 */
 	def operator_multiply(l : Float, v : Vector2) : Vector2 {
 		return new Vector2(v.x * l, v.y * l)
 	}
 	
+	/**
+	 * Unary minus operator
+	 */
 	def operator_minus(): Vector2 {
 		return new Vector2(-x, -y)
 	}
@@ -50,15 +90,37 @@ class Vector2 {
 		return Math.atan2(y, x).floatValue
 	}
 	
+	/** 
+	 * Gets the squared norm of this vector
+	 * @return the squared norm of this vector
+	 */
 	def squaredNorm() : Float {
 		return x * x + y * y
 	}
 	
+	/**
+	 * Gets the norm of this vector
+	 * @return the norm of this vector
+	 */
 	def norm(): Float {
 		return Math.sqrt(squaredNorm()).floatValue
 	}
+
+	/**
+	 * Computes the dot product of this vector and v
+	 * @param v the other vector
+	 * @return the dot product
+	 */
+	override dot(v : Vector2) : Float {
+		return this.x * v.x + this.y * v.y
+	}
 	
+	/** 
+	 * Gets the String representation of this vector
+	 * @return a String showing the coordinates of this vector 
+	 */
 	override toString() : String {
 		return "[" + x + ", " + y + "]"
 	}
+	
 }

@@ -1,26 +1,17 @@
 /** 
  * 
  */
-package io.sarl.airsim.behaviors
+package io.sarl.airsim.behaviors.target
 
-import fr.utbm.airsim.api.Vector3r
+import io.sarl.airsim.influences.MoveByVelocity
+import io.sarl.airsim.influences.Takeoff
+import io.sarl.airsim.math.Vector3
+import io.sarl.airsim.math.Vector4
+import io.sarl.airsim.perceptions.sim.SimPosePerception
+import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Initialize
 import io.sarl.core.Logging
 import io.sarl.core.Schedules
-import io.sarl.airsim.perceptions.sim.SimPosePerception
-import fr.utbm.airsim.api.Pose
-import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
-import fr.utbm.airsim.api.KinematicsState
-import org.eclipse.xtend.lib.annotations.Accessors
-import io.sarl.lang.core.Address
-import io.sarl.core.DefaultContextInteractions
-import io.sarl.airsim.communication.NotifyPose
-import io.sarl.airsim.communication.NotifyKinematics
-import io.sarl.airsim.influences.MoveByVelocity
-import io.sarl.airsim.influences.Takeoff
-import io.sarl.airsim.influences.sim.SetVehiclePose
-import io.sarl.airsim.math.Vector3
-import io.sarl.airsim.math.Vector4
 
 /** 
  * Drone behavior: defines a target point (the opposite of the start point) and try to reach this target
@@ -28,27 +19,15 @@ import io.sarl.airsim.math.Vector4
  * @author Alexandre Lombard
  * 
  */
-behavior ReachTargetPoint3D {
+behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 	
-	private val targetRadius = 0.5f
-	private val startupDelayMs = 4000
-	private val periodMs = 100
-	private val avoidanceRadius = 1.5f
+	val targetRadius = 0.5f
+	val startupDelayMs = 4000
+	val periodMs = 100
+	val avoidanceRadius = 1.5f
 	
-	private val zOffset = -2.0f
+	val zOffset = -2.0f
 
-	var targetPoint: Vector3 = null
-	
-	// region Internal state of the agent
-	var initialPose: Pose = null
-	var initialVelocity: Vector3 = null
-	var pose = new Pose()
-	var velocity = new Vector3()
-	// endregion
-	
-	// region Data about the state of the other agents
-	val neighbours = <Address, DroneState>newHashMap
-	// endregion
 	
 	uses Logging, DefaultContextInteractions, Schedules
 
@@ -92,56 +71,11 @@ behavior ReachTargetPoint3D {
 	on SimPosePerception {
 		// Update the internal pose state and fix the target point if not set
 		synchronized (this.pose) {
-			this.pose = occurrence.pose	
-
-			if(this.initialPose === null)
-				this.initialPose = this.pose
-			
 			if(this.targetPoint === null) {
 				this.targetPoint = new Vector3(
 					-this.pose.position.getX(),
 					-this.pose.position.getY(),
 					this.pose.position.getZ() + zOffset) 		// We don't invert the Z, but we add an offset so it's not on the ground
-			}
-			
-			emit(new NotifyPose(this.pose))
-		}
-	}
-	
-	on SimGroundTruthKinematicsPerception {
-		// Update the internal velocity state
-		synchronized (this.velocity) {
-			this.velocity = new Vector3(occurrence.state.linearVelocity)
-
-			if(this.initialVelocity === null)
-				this.initialVelocity = this.velocity
-			
-			emit(new NotifyKinematics(occurrence.state))
-		}
-	}
-	
-	/**
-	 * When the pose of another agent is received, we register it in the map of neighbours
-	 */
-	on NotifyPose [ !isMe(occurrence.source) ] {
-		synchronized(this.neighbours) {
-			if(neighbours.containsKey(occurrence.source)) {
-				neighbours.put(occurrence.source, new DroneState(neighbours.get(occurrence.source), occurrence.pose))
-			} else {
-				neighbours.put(occurrence.source, new DroneState(occurrence.pose, null))
-			}
-		}
-	}
-	
-	/**
-	 * When the kinematic state of another agent is received, we register it in the map of neighbours
-	 */
-	on NotifyKinematics [ !isMe(occurrence.source) ] {
-		synchronized(this.neighbours) {
-			if (neighbours.containsKey(occurrence.source)) {
-				neighbours.put(occurrence.source, new DroneState(neighbours.get(occurrence.source), occurrence.state))
-			} else {
-				neighbours.put(occurrence.source, new DroneState(null as Pose, occurrence.state))
 			}
 		}
 	}
@@ -342,34 +276,8 @@ behavior ReachTargetPoint3D {
 			}
 		}
 	}
-
-	def reset() {
-		emit(new SetVehiclePose(this.initialPose))
-	}
 }
 
-/** 
- * Internal class used to store the state of the other agents
- * @author Alexandre Lombard
- */
-class DroneState {
-	public val pose : Pose
-	public val state : KinematicsState
 
-	new(pose : Pose, state : KinematicsState) {
-		this.pose = pose
-		this.state = state
-	}
-
-	new(previousState : DroneState, pose : Pose) {
-		this.pose = pose
-		this.state = previousState.state
-	}
-
-	new(previousState : DroneState, kinematicsState : KinematicsState) {
-		this.pose = previousState.pose
-		this.state = kinematicsState
-	}
-}
 
 

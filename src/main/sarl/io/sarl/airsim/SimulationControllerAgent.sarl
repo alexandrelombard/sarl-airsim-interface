@@ -8,20 +8,19 @@ import fr.utbm.airsim.api.MultirotorClientInterface
 import fr.utbm.airsim.api.YawMode
 import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.airsim.influences.Takeoff
-import io.sarl.airsim.perceptions.LidarDataPerception
+import io.sarl.airsim.influences.sim.SetVehiclePose
+import io.sarl.airsim.perceptions.MultirotorStatePerception
+import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
+import io.sarl.airsim.perceptions.sim.SimPosePerception
 import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Destroy
 import io.sarl.core.Initialize
 import io.sarl.core.Logging
 import io.sarl.core.Schedules
 import io.sarl.lang.core.Address
+import java.util.Collections
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
-import io.sarl.airsim.perceptions.MultirotorStatePerception
-import io.sarl.airsim.perceptions.sim.SimPosePerception
-import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
-import io.sarl.airsim.influences.sim.SetVehiclePose
-import java.util.Collections
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -32,6 +31,11 @@ import java.util.Collections
 agent SimulationControllerAgent {
 	uses Logging, DefaultContextInteractions, Schedules
 	
+	// TODO Manage the simulation schedule: i.e. pause the simulation when the agents are computing their commands, and simulate for a fixed step 
+	
+	/** The perception period for all drones */
+	val perceptionPeriodMs = 100
+	
 	// Temporary solution to manage the affectation of the drones to the agents
 	//val availableDrones = newLinkedList("Alpha", "Bravo", "Charly", "Delta", "Echo")
 	// val availableDrones = newLinkedList("Alpha", "Charly", "Bravo", "Delta", "Echo")
@@ -41,15 +45,15 @@ agent SimulationControllerAgent {
 	//val availableDrones = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19")
 	val affectedDrones = <Address, String>newHashMap
 	
+	// Attributes used to access AirSim API
 	val loop = EventLoop.defaultEventLoop()
-
 	val rpcClient = new Client("127.0.0.1", 41451, loop)
 	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
 	
 	on Initialize {
 		Collections.shuffle(availableDrones)
 
-		every(100) [
+		every(perceptionPeriodMs) [
 			synchronized (this) {
 				// Fetch the lidar data and propagate it
 //				affectedDrones.mapValues[multirotorClient.getLidarData("Lidar", it)].forEach [ k : Address, v |
@@ -77,16 +81,25 @@ agent SimulationControllerAgent {
 		//
 	}
 	
+	/**
+	 * When a drone emits the take-off instruction, transfers it to AirSim
+	 */
 	on Takeoff {
 		multirotorClient.takeoffAsync(20.0f, affectOrGetDrone(occurrence.source))
 	}
-	
+
+	/** 
+	 * When a drone emits the move-by-velocity instruction, transfers it to AirSim
+	 */
 	on MoveByVelocity {
 		multirotorClient.moveByVelocityAsync(
 			occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
 			new YawMode(), affectOrGetDrone(occurrence.source))
 	}
 
+	/** 
+	 * When a drone emits the set-vehicle-pose instruction, transfers it to AirSim
+	 */
 	on SetVehiclePose {
 		multirotorClient.simSetVehiclePose(occurrence.pose, true, affectOrGetDrone(occurrence.source))
 	}

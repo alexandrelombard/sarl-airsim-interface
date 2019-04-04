@@ -3,6 +3,8 @@
  */
 package io.sarl.airsim.influences
 
+import io.sarl.airsim.math.Vector3
+
 /** 
  * Event emitted by an agent when it wants to move
  * @author Alexandre Lombard
@@ -14,10 +16,26 @@ event MoveByVelocity {
 	val vz: Float
 	val duration: Float
 	
+	/**
+	 * Builds a move by velocity command
+	 * @param vx the linear velocity on the X axis
+	 * @param vy the linear velocity on the Y axis
+	 * @param vz the linear velocity on the Z axis
+	 * @param duration the duration of the application of the velocity
+	 */
 	new(vx: Float, vy: Float, vz: Float, duration: Float) {
 		this.vx = vx
 		this.vy = vy
 		this.vz = vz
 		this.duration = duration
+	}
+
+	/** 
+	 * Builds a move by velocity command
+	 * @param v the velocity vector
+	 * @param duration the duration of the application of the velocity
+	 */
+	new(v: Vector3, duration: Float) {
+		this(v.x, v.y, v.z, duration)
 	}
 }
