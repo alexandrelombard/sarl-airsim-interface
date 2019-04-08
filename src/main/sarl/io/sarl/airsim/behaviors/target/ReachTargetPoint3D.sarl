@@ -27,8 +27,8 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 	val targetRadius = 1.0f
 	val startupDelayMs = 5000
 	val periodMs = 25
-	val avoidanceRadius = 0.8f
-	val slidingScaling = 5f
+	val avoidanceRadius = 1.0f
+	val slidingScaling = 8f
 	
 	val zOffset = -2.5f
 	
@@ -117,7 +117,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 		if(sliding === null)
 			sliding = new Vector3(0f, 0f, 0f)
 
-		val attraction = computeAttraction((targetPoint - position).normalized(), sliding.length(), 25f, 3.0f)
+		val attraction = computeAttraction((targetPoint - position).normalized(), sliding.length(), 15f, 3.0f)
 		val result = (sliding * slidingScaling) + attraction
 
 		if (result.dot((targetPoint - position)) < 0.0)
@@ -227,17 +227,15 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 	}
 	
 	def switchTargetPoint() {
-		synchronized (this.pose) {
-			if(this.targetPoint !== null) {
-				if((this.targetPoint - new Vector3(this.initialPose.position)).length() < 1e-2f) {
-					this.targetPoint = new Vector3(
-						-this.initialPose.position.getX(),
-						-this.initialPose.position.getY(),
-						this.initialPose.position.getZ() + zOffset)
-				} else {
-					this.targetPoint = new Vector3(this.initialPose.position.getX(), this.initialPose.position.getY(),
-						this.initialPose.position.getZ() + zOffset)
-				}
+		if(this.targetPoint !== null) {
+			if((this.targetPoint - new Vector3(this.initialPose.position)).length() < 1e-2f) {
+				this.targetPoint = new Vector3(
+					-this.initialPose.position.getX(),
+					-this.initialPose.position.getY(),
+					this.initialPose.position.getZ() + zOffset)
+			} else {
+				this.targetPoint = new Vector3(this.initialPose.position.getX(), this.initialPose.position.getY(),
+					this.initialPose.position.getZ() + zOffset)
 			}
 		}
 	}

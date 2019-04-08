@@ -107,10 +107,12 @@ agent SimulationControllerAgent {
 	 * This function affects a drone to an agent (if it has no drone affected), or it returns the name of the
 	 * affected drone in the other case.
 	 */
-	synchronized def affectOrGetDrone(address : Address) {
+	def affectOrGetDrone(address : Address) {
 		var name: String
 		if (!affectedDrones.containsKey(address)) {
-			name = availableDrones.pop()
+			synchronized (this.availableDrones) {
+				name = availableDrones.pop()
+			}
 			info("Received affectation: " + address.UUID + " - " + name)
 			affectedDrones.put(address, name)
 			multirotorClient.enableApiControl(true, name)
