@@ -80,6 +80,15 @@ class Vector3 implements Vector<Vector3> {
 	def cross(v: Vector3): Vector3 {
 		return new Vector3(y  * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x)
 	}
+	
+	/**
+	 * Computes the projection of a vector v on this
+	 * @param v the vector to project
+	 * @return the projection of v on this
+	 */
+	def project(v: Vector3): Vector3 {
+		return this.dot(v) / this.squaredNorm() * this
+	}
 
 	/** 
 	 * Computes the dot product of this vector and v

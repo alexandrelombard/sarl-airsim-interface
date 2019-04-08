@@ -21,6 +21,7 @@ import io.sarl.lang.core.Address
 import java.util.Collections
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -43,7 +44,7 @@ agent SimulationControllerAgent {
 	//val availableDrones = newLinkedList("S0", "S1", "S2", "S3")
 	val availableDrones = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9")
 	//val availableDrones = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19")
-	val affectedDrones = <Address, String>newHashMap
+	val affectedDrones = new ConcurrentHashMap<Address, String>
 	
 	// Attributes used to access AirSim API
 	val loop = EventLoop.defaultEventLoop()
@@ -54,26 +55,24 @@ agent SimulationControllerAgent {
 		Collections.shuffle(availableDrones)
 
 		every(perceptionPeriodMs) [
-			synchronized (this) {
-				// Fetch the lidar data and propagate it
-//				affectedDrones.mapValues[multirotorClient.getLidarData("Lidar", it)].forEach [ k : Address, v |
-//					emit(new LidarDataPerception(v))[it == k]
-//				]
+			// Fetch the lidar data and propagate it
+//			affectedDrones.mapValues[multirotorClient.getLidarData("Lidar", it)].forEach [ k : Address, v |
+//				emit(new LidarDataPerception(v))[it == k]
+//			]
 
-				// Fetch the multirotor state info and propagate it
-				affectedDrones.mapValues[multirotorClient.getMultirotorState(it)].forEach [ k : Address, v |
-					emit(new MultirotorStatePerception(v))[it == k]
-				]
+			// Fetch the multirotor state info and propagate it
+			affectedDrones.mapValues[multirotorClient.getMultirotorState(it)].forEach [ k : Address, v |
+				emit(new MultirotorStatePerception(v))[it == k]
+			]
 
-				// Fetch the sim pose and propagate it
-				affectedDrones.mapValues[ multirotorClient.simGetObjectPose(it)].forEach [ k : Address, v |
-					emit(new SimPosePerception(v))[it == k]
-				]
+			// Fetch the sim pose and propagate it
+			affectedDrones.mapValues[ multirotorClient.simGetObjectPose(it)].forEach [ k : Address, v |
+				emit(new SimPosePerception(v))[it == k]
+			]
 
-				affectedDrones.mapValues[multirotorClient.simGetGroundTruthKinematics(it)].forEach [ k : Address, v |
-					emit(new SimGroundTruthKinematicsPerception(v))[it == k]
-				]
-			}
+			affectedDrones.mapValues[multirotorClient.simGetGroundTruthKinematics(it)].forEach [ k : Address, v |
+				emit(new SimGroundTruthKinematicsPerception(v))[it == k]
+			]
 		]
 	}
 
