@@ -181,6 +181,11 @@ behavior ReachTargetPoint extends AbstractReachTargetPoint {
 		val coefC = -Math.pow(d, 2)
 
 		val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
+
+		if (delta < 0.0f) {
+			return Float.MAX_VALUE
+		}
+		
 		return ((-coefB + Math.sqrt(delta)) / (2 * coefA) / 2).floatValue 	// Note: I'm dividing by two but I don't know why
 	}
 }

@@ -5,7 +5,7 @@ package io.sarl.airsim.math
  * @author Alexandre Lombard
  */
 class Vector4 implements Vector<Vector4> {
-
+	
 	/** X coordinate */
 	public val x : Float
 	/** Y coordinate */

@@ -25,13 +25,14 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 	uses Logging, DefaultContextInteractions, Schedules
 	
 	val targetRadius = 1.0f
-	val startupDelayMs = 4000
+	val startupDelayMs = 5000
 	val periodMs = 100
-	val avoidanceRadius = 1.5f
+	val avoidanceRadius = 0.5f
+	val slidingScaling = 8f
 	
-	val zOffset = -2.0f
+	val zOffset = -2.5f
 	
-	val meanFilter = new Vector3MeanFilter(5)
+	val meanFilter = new Vector3MeanFilter(6)
 
 	on Initialize {
 		info("Drone agent is starting...")
@@ -47,19 +48,18 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					// If we are at the target position, and if the velocity is almost null, we reset the drone position
 					//reset()
 					// If we are at the target position, we change the target position (source becomes destination)
-					//switchTargetPoint()
-					synchronized (this.pose) {
-						if(this.targetPoint !== null) {
-							if((this.targetPoint - new Vector3(this.initialPose.position)).length() < 1e-2f) {
-								this.targetPoint = new Vector3(
-									-this.initialPose.position.getX(),
-									-this.initialPose.position.getY(),
-									this.initialPose.position.getZ() + zOffset)
-							} else {
-								this.targetPoint = new Vector3(this.initialPose.position.getX(), this.initialPose.position.getY(), this.initialPose.position.getZ() + zOffset)
-							}
-						}
-					}
+					//synchronized (this.pose) {
+					//	if(this.targetPoint !== null) {
+					//		if((this.targetPoint - new Vector3(this.initialPose.position)).length() < 1e-2f) {
+					//			this.targetPoint = new Vector3(
+					//				-this.initialPose.position.getX(),
+					//				-this.initialPose.position.getY(),
+					//				this.initialPose.position.getZ() + zOffset)
+					//		} else {
+					//			this.targetPoint = new Vector3(this.initialPose.position.getX(), this.initialPose.position.getY(), this.initialPose.position.getZ() + zOffset)
+					//		}
+					//	}
+					//}
 				} else {
 					// Note: the computed force is scaled to reduce its strength
 					val movementForce = meanFilter.filter(computeForce() * 0.1f)
@@ -113,7 +113,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 			sliding = new Vector3(0f, 0f, 0f)
 
 		val attraction = computeAttraction((targetPoint - position).normalized(), sliding.length(), 25f, 2f)
-		val result = (sliding * 5f) + attraction
+		val result = (sliding * slidingScaling) + attraction
 
 		return result
 	}
@@ -193,7 +193,8 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 						//val vu = new Vector3(selfDirection.getX(), selfDirection.getY(), selfDirection.getZ()).normalized()
 						//val slidingDirection: Vector3 = otu.cross(vu)
 						// Try #02 3D avoidance strategy
-						val slidingDirectionXY = new Vector3(-obstacleDirection.getY(), obstacleDirection.getX(), 0.0f)
+						// val slidingDirectionXY = new Vector3(-obstacleDirection.getY(), obstacleDirection.getX(), 0.0f)
+						val slidingDirectionXY = new Vector3()
 						val slidingDirectionXZ = new Vector3(obstacleDirection.getZ(), 0.0f, -obstacleDirection.getX())
 						val slidingDirection = (slidingDirectionXY + slidingDirectionXZ).normalized
 						
@@ -206,7 +207,10 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					}
 
 					return new Vector3()
-				].values.reduce[p1, p2 | new Vector3(p1.getX() + p2.getX(), p1.getY() + p2.getY(), p1.getZ() + p2.getZ())]
+				]
+				.values
+				.filter[!Float.isNaN(it.getX()) && !Float.isNaN(it.getY()) && !Float.isNaN(it.getZ())]
+				.reduce[p1, p2 | new Vector3(p1.getX() + p2.getX(), p1.getY() + p2.getY(), p1.getZ() + p2.getZ())]
 		}
 		return sliding
 	}
@@ -245,6 +249,11 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 		val coefC = -Math.pow(d, 2)
 
 		val delta = Math.pow(coefB, 2) - 4f * coefA * coefC
+		
+		if(delta < 0.0f) {
+			return Float.MAX_VALUE
+		}
+		
 		return ((-coefB + Math.sqrt(delta)) / (2 * coefA) / 2).floatValue 	// Note: I'm dividing by two but I don't know why
 	}
 }

@@ -5,6 +5,7 @@ package io.sarl.airsim.math
  * @author Alexandre Lombard
  */
 class Vector2 implements Vector<Vector2> {
+	
 	/** X coordinate */
 	public val x : Float
 	/** Y coordinate */
