@@ -35,7 +35,7 @@ agent SimulationControllerAgent {
 	// TODO Manage the simulation schedule: i.e. pause the simulation when the agents are computing their commands, and simulate for a fixed step 
 	
 	/** The perception period for all drones */
-	val perceptionPeriodMs = 100
+	val perceptionDelayMs = 5
 	
 	// Temporary solution to manage the affectation of the drones to the agents
 	//val availableDrones = newLinkedList("Alpha", "Bravo", "Charly", "Delta", "Echo")
@@ -54,7 +54,8 @@ agent SimulationControllerAgent {
 	on Initialize {
 		Collections.shuffle(availableDrones)
 
-		every(perceptionPeriodMs) [
+		atFixedDelay(perceptionDelayMs) [
+			val tic = System.currentTimeMillis
 			// Fetch the lidar data and propagate it
 //			affectedDrones.mapValues[multirotorClient.getLidarData("Lidar", it)].forEach [ k : Address, v |
 //				emit(new LidarDataPerception(v))[it == k]
@@ -73,6 +74,9 @@ agent SimulationControllerAgent {
 			affectedDrones.mapValues[multirotorClient.simGetGroundTruthKinematics(it)].forEach [ k : Address, v |
 				emit(new SimGroundTruthKinematicsPerception(v))[it == k]
 			]
+			
+			val toc = System.currentTimeMillis
+			info("Tic: " + (toc - tic))
 		]
 	}
 
