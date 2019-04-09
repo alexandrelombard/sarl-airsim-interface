@@ -27,7 +27,11 @@ import io.sarl.airsim.simulation.DirectInfluenceReactionStrategy
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
- * dispatching the perceptions 
+ * dispatching the perceptions .
+ * This agent has basically 3 main capacities:
+ * - Managing the propagation of perceptions and influences
+ * - Managing the simulation schedule
+ * - Managing the affectation of bodies to agents
  * @author Alexandre Lombard
  * 
  */
