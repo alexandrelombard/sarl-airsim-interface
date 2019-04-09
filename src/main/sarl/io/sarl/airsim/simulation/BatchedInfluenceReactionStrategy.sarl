@@ -71,6 +71,18 @@ class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
 		}
 	}
 	
+	def clearPerceptions {
+		this.perceptions.clear
+	}
+	
+	/**
+	 * Clear all pending influences, it can be useful if we want, for instance,
+	 * to remove all influences emitted just before the perceptions are being retrieved
+	 */
+	def clearInfluences {
+		this.influences.clear
+	}
+	
 	def onPerceptionsPropagated(action: ()=>Object) {
 		this.perceptionsPropagationListener = action
 	}

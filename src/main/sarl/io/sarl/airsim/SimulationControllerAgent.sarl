@@ -47,7 +47,7 @@ agent SimulationControllerAgent {
 
 	/** The influence/reaction strategy defining when influence and perceptions should be propagated */
 	val influenceReactionStrategy = new DirectInfluenceReactionStrategy()
-	/** Perceptions are propagated as soon as they are received, influences as soon as every one has sent one */
+	/** Perceptions are propagated as soon as they are received, influences as soon as every one has sent one and if the delay is respected */
 //	val influenceReactionStrategy = new BatchedInfluenceReactionStrategy(
 //			[t, p|true], [t, i|t > simulationStepMs && i.size >= affectedBodies.size])
 	
@@ -59,19 +59,35 @@ agent SimulationControllerAgent {
 	on Initialize {
 		Collections.shuffle(availableBodies)
 		
-		// Scheduling according to the direct influence/reaction strategy
+		// Standard scheduling according to the direct influence/reaction strategy (it would also work with Batched but forbidding
+		// influences from being applied immediately is not well-suited with real-time simulation)
 		// Perceptions are retrieved regularly, simulation runs in real-time
-		atFixedDelay(10) [ retrievePerceptions ]
+//		atFixedDelay(10) [ retrievePerceptions ]
 		
 		// Scheduling according to the batched influence/reaction strategy
 		// Perceptions are retrieved only after influences have been applied, simulation runs with fixed steps
 		
-//		multirotorClient.simPause(true)
-//		
-//		simulationStrategy.onInfluencesPropagated [
+		multirotorClient.simPause(true)
+
+		atFixedDelay(simulationStepMs.longValue) [
+			multirotorClient.simPause(true)
+			
+			retrievePerceptions()
+			
+			multirotorClient.simContinueForTime(simulationStepMs)
+		]
+
+//		influenceReactionStrategy.onInfluencesPropagated [
 //			info("Influences applied, running a step...")
-//			
-//			runSimulationStep
+//
+//			multirotorClient.simContinueForTime(simulationStepMs)
+//
+//			// Note: perceptions should not be retrieved while sleeping
+//			Thread.sleep(simulationStepMs.longValue)
+//
+//			retrievePerceptions()
+//
+//			multirotorClient.simPause(true)
 //			
 //			return null
 //		]
@@ -126,17 +142,6 @@ agent SimulationControllerAgent {
 			emit(new SimGroundTruthKinematicsPerception(kinematics))[it == address]
 			return null
 		]
-	}
-	
-	private def runSimulationStep {
-		multirotorClient.simContinueForTime(simulationStepMs)
-
-		// Note: perceptions should not be retrieved while sleeping
-		Thread.sleep(simulationStepMs.longValue)
-
-		retrievePerceptions()
-
-		multirotorClient.simPause(true)
 	}
 	
 	/** Retrieve the perceptions for all agents */
