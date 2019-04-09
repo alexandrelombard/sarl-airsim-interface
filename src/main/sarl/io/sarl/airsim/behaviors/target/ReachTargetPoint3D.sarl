@@ -63,6 +63,8 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					//		}
 					//	}
 					// }
+						// For the simulation, the agent must send an influence even if it's an empty one
+						emit(new MoveByVelocity(0.0f, 0.0f, 0.0f, periodMs / 1000.0f))
 					} else {
 						// Note: the computed force is scaled to reduce its strength
 						val movementForce = meanFilter.filter(computeForce() * 0.1f)
@@ -81,10 +83,11 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 	on SimPosePerception {
 		// Update the internal pose state and fix the target point if not set
 		if(this.targetPoint === null) {
-			this.targetPoint = new Vector3(
-				-this.pose.position.getX(),
-				-this.pose.position.getY(),
-				this.pose.position.getZ() + zOffset) 		// We don't invert the Z, but we add an offset so it's not on the ground
+			//this.targetPoint = new Vector3(
+			//	-this.pose.position.getX(),
+			//	-this.pose.position.getY(),
+			//	this.pose.position.getZ() + zOffset) 		// We don't invert the Z, but we add an offset so it's not on the ground
+			this.targetPoint = computeTargetPoint(this.pose.position.toVector3)
 		}
 	}
 	
@@ -121,9 +124,6 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 		val attraction = computeAttraction((targetPoint - position).normalized(), sliding.length(), attractionFactor,
 			3.0f)
 		val result = (sliding * slidingScaling) + attraction
-
-		if (result.dot((targetPoint - position)) < 0.0)
-			info("Critical state: " + attraction + " ; " + sliding)
 
 		return result
 	}
@@ -226,6 +226,18 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 			.reduce[p1, p2 | new Vector3(p1.getX() + p2.getX(), p1.getY() + p2.getY(), p1.getZ() + p2.getZ())]
 		
 		return sliding
+	}
+	
+	def computeTargetPoint(position : Vector3) {
+		val angle = 2.0 * Math.PI / 10.0
+		val symmetry = new Vector3(-position.getX(), -position.getY(), position.getZ() + zOffset)
+		val rotation =
+				new Vector3(
+					(Math.cos(angle) * symmetry.getX() - Math.sin(angle) * symmetry.getY()).floatValue,
+					(Math.sin(angle) * symmetry.getX() + Math.cos(angle) * symmetry.getY()).floatValue,
+					symmetry.getZ())
+					
+		return rotation
 	}
 	
 	def switchTargetPoint() {

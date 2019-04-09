@@ -35,10 +35,10 @@ agent SimulationControllerAgent {
 	// TODO Manage the simulation schedule: i.e. pause the simulation when the agents are computing their commands, and simulate for a fixed step 
 	
 	/** The perception period for all drones */
-	val perceptionDelayMs = 5
+	val perceptionDelayMs = 100
 	
 	/** The simulation step */
-	val simulationStepMs = 10.0
+	val simulationStepMs = 100.0
 	
 	// Temporary solution to manage the affectation of the drones to the agents
 	//val availableDrones = newLinkedList("S1", "S3")
