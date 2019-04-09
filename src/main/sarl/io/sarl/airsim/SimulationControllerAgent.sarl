@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap
  * 
  */
 agent SimulationControllerAgent {
+	
 	uses Logging, DefaultContextInteractions, Schedules
 	
 	// TODO Manage the simulation schedule: i.e. pause the simulation when the agents are computing their commands, and simulate for a fixed step 
