@@ -50,10 +50,10 @@ agent SimulationControllerAgent {
 	val affectedBodies = new ConcurrentHashMap<Address, String>
 
 	/** The influence/reaction strategy defining when influence and perceptions should be propagated */
-	val influenceReactionStrategy = new DirectInfluenceReactionStrategy()
-	/** Perceptions are propagated as soon as they are received, influences as soon as every one has sent one and if the delay is respected */
-//	val influenceReactionStrategy = new BatchedInfluenceReactionStrategy(
-//			[t, p|true], [t, i|t > simulationStepMs && i.size >= affectedBodies.size])
+//	val influenceReactionStrategy = new DirectInfluenceReactionStrategy()
+	/** Perceptions are propagated as soon as they are received, influences as soon as every one has sent one and eventually if the delay is respected */
+	val influenceReactionStrategy = new BatchedInfluenceReactionStrategy(
+			[t, p|true], [t, i|i.size >= affectedBodies.size], 1, false)
 	
 	// Attributes used to access AirSim API
 	val loop = EventLoop.defaultEventLoop()
@@ -63,6 +63,12 @@ agent SimulationControllerAgent {
 	on Initialize {
 		Collections.shuffle(availableBodies)
 		
+		// Note: 3 possible scheduling policies:
+		// - Get perceptions at a fixed step, real-time simulation
+		// - Fixed-step simulation, get the perception one time for each step
+		// - Fixed-step simulation with blocking condition, like the previous one, except that a blocking condition can interrupt the
+		//   execution (e.g. if there is an agent who doesn't have sent its influence)
+		
 		// Standard scheduling according to the direct influence/reaction strategy (it would also work with Batched but forbidding
 		// influences from being applied immediately is not well-suited with real-time simulation)
 		// Perceptions are retrieved regularly, simulation runs in real-time
@@ -70,6 +76,11 @@ agent SimulationControllerAgent {
 		
 		// Scheduling according to the batched influence/reaction strategy
 		// Perceptions are retrieved only after influences have been applied, simulation runs with fixed steps
+		val influencesPropagated = newArrayList(false)
+		influenceReactionStrategy.onInfluencesPropagated[|
+			info("Influences propagated...")
+			influencesPropagated.set(0, true)
+		]
 		
 		multirotorClient.simPause(true)
 
@@ -78,23 +89,21 @@ agent SimulationControllerAgent {
 			
 			retrievePerceptions()
 			
-			multirotorClient.simContinueForTime(simulationStepMs)
-		]
+			// Wait until influences are being propagated
+			// FIXME Active wait
+			while(!influencesPropagated.get(0)) {
+				info("Influences not propagated...")
+				Thread.sleep(10)
+			}
+				
 
-//		influenceReactionStrategy.onInfluencesPropagated [
-//			info("Influences applied, running a step...")
-//
-//			multirotorClient.simContinueForTime(simulationStepMs)
-//
-//			// Note: perceptions should not be retrieved while sleeping
-//			Thread.sleep(simulationStepMs.longValue)
-//
-//			retrievePerceptions()
-//
-//			multirotorClient.simPause(true)
-//			
-//			return null
-//		]
+			info("Continuing simulation...")
+			
+			multirotorClient.simContinueForTime(simulationStepMs)
+
+			// Flag the influences as not propagated
+			influencesPropagated.set(0, false)
+		]
 	}
 
 	on Destroy {

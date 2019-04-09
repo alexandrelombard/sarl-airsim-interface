@@ -25,17 +25,21 @@ class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
 	var perceptionsPropagationListener : ()=>Object
 	var influencesPropagationListener : ()=>Object
 	
+	// region Buffer parameters
 	val influenceBufferSize: int
+	val influenceDropOld: boolean
+	// endregion
 	
 	var lastPerceptionPropagationTimeMs = 0L
 	var lastInfluencePropagationTimeMs = 0L
 	
 	new(perceptionPropagationCondition : (Long, Collection<Address>)=>Boolean,
 		influencePropagationCondition : (Long, Collection<Address>)=>Boolean,
-		influenceBufferSize: int = 0) {
+		influenceBufferSize : int = 0, influenceDropOld: boolean = true) {
 		this.perceptionPropagationCondition = perceptionPropagationCondition
 		this.influencePropagationCondition = influencePropagationCondition
 		this.influenceBufferSize = influenceBufferSize
+		this.influenceDropOld = influenceDropOld
 	}
 	
 	def perceptionReceived(destination : Address, propagate : ()=>Object) {
@@ -56,9 +60,15 @@ class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
 		if(!this.influences.containsKey(source))
 			this.influences.put(source, new LinkedBlockingQueue)
 		
-		// If there are too much influences for a single emitter, we poll the oldest
+		// If there are too much influences for a single emitter, we apply the "buffer overflow" policy
 		if (this.influenceBufferSize > 0 && this.influences.get(source).size() >= this.influenceBufferSize) {
-			this.influences.get(source).poll
+			if (this.influenceDropOld) {
+				// If we drop the old influences, we poll the oldest
+				this.influences.get(source).poll	
+			} else {
+				// If we keep the old influences, we ignore the new one
+				return
+			}
 		}
 		
 		this.influences.get(source).add(propagate)
