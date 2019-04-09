@@ -211,7 +211,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					//val slidingDirection = (slidingDirectionXY * 0.25f + slidingDirectionXZ * 0.75f).normalized
 					val slidingDirection = (slidingDirectionXY + slidingDirectionXZ).normalized
 					
-					val slidingScale = computeSlidingScale(t)
+					val slidingScale = computeSlidingScale(t, 0.25f, 4f, 10f)
 					
 					val sign = 1.0f
 					val slidingVector = slidingDirection * slidingScale.floatValue * sign

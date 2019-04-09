@@ -37,14 +37,18 @@ agent SimulationControllerAgent {
 	/** The perception period for all drones */
 	val perceptionDelayMs = 5
 	
+	/** The simulation step */
+	val simulationStepMs = 10.0
+	
 	// Temporary solution to manage the affectation of the drones to the agents
-	//val availableDrones = newLinkedList("Alpha", "Bravo", "Charly", "Delta", "Echo")
-	// val availableDrones = newLinkedList("Alpha", "Charly", "Bravo", "Delta", "Echo")
 	//val availableDrones = newLinkedList("S1", "S3")
 	//val availableDrones = newLinkedList("S0", "S1", "S2", "S3")
 	val availableDrones = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9")
 	//val availableDrones = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19")
 	val affectedDrones = new ConcurrentHashMap<Address, String>
+	
+	/** A map making the link between an address and a flag indicating if an action has been performed */
+	val actionFlags = new ConcurrentHashMap<Address, Boolean>
 	
 	// Attributes used to access AirSim API
 	val loop = EventLoop.defaultEventLoop()
@@ -54,8 +58,9 @@ agent SimulationControllerAgent {
 	on Initialize {
 		Collections.shuffle(availableDrones)
 
+		multirotorClient.simPause(true)
+
 		atFixedDelay(perceptionDelayMs) [
-			val tic = System.currentTimeMillis
 			// Fetch the lidar data and propagate it
 //			affectedDrones.mapValues[multirotorClient.getLidarData("Lidar", it)].forEach [ k : Address, v |
 //				emit(new LidarDataPerception(v))[it == k]
@@ -75,8 +80,18 @@ agent SimulationControllerAgent {
 				emit(new SimGroundTruthKinematicsPerception(v))[it == k]
 			]
 			
-			val toc = System.currentTimeMillis
-			info("Tic: " + (toc - tic))
+			// If each drone has performed an action, we run a simulation step
+			if (actionFlagsCount === affectedDrones.size) {
+				info("Applying actions...")
+				
+				resetActionFlags()
+				
+				multirotorClient.simContinueForTime(simulationStepMs)
+				Thread.sleep(simulationStepMs.longValue)
+				multirotorClient.simPause(true)
+			} else {
+				info("Actions received: " + actionFlagsCount)
+			}
 		]
 	}
 
@@ -88,6 +103,7 @@ agent SimulationControllerAgent {
 	 * When a drone emits the take-off instruction, transfers it to AirSim
 	 */
 	on Takeoff {
+		markAction(occurrence.source)
 		multirotorClient.takeoffAsync(20.0f, affectOrGetDrone(occurrence.source))
 	}
 
@@ -95,6 +111,7 @@ agent SimulationControllerAgent {
 	 * When a drone emits the move-by-velocity instruction, transfers it to AirSim
 	 */
 	on MoveByVelocity {
+		markAction(occurrence.source)
 		multirotorClient.moveByVelocityAsync(
 			occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
 			new YawMode(), affectOrGetDrone(occurrence.source))
@@ -104,6 +121,7 @@ agent SimulationControllerAgent {
 	 * When a drone emits the set-vehicle-pose instruction, transfers it to AirSim
 	 */
 	on SetVehiclePose {
+		markAction(occurrence.source)
 		multirotorClient.simSetVehiclePose(occurrence.pose, true, affectOrGetDrone(occurrence.source))
 	}
 	
@@ -111,7 +129,7 @@ agent SimulationControllerAgent {
 	 * This function affects a drone to an agent (if it has no drone affected), or it returns the name of the
 	 * affected drone in the other case.
 	 */
-	def affectOrGetDrone(address : Address) {
+	private def affectOrGetDrone(address : Address) {
 		var name: String
 		if (!affectedDrones.containsKey(address)) {
 			synchronized (this.availableDrones) {
@@ -125,5 +143,20 @@ agent SimulationControllerAgent {
 		}
 			
 		return name
+	}
+	
+	/** Flag an action */
+	private def markAction(a: Address) {
+		this.actionFlags.put(a, true)
+	}
+	
+	/** Count the number of agents having performed an action */
+	private def actionFlagsCount() {
+		return this.actionFlags.values.filter[it === true].size
+	}
+	
+	/** Reset the action flags */
+	private def resetActionFlags() {
+		this.actionFlags.clear
 	}
 }
