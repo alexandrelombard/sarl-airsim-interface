@@ -1,0 +1,23 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation
+
+import io.sarl.lang.core.Address
+
+/** 
+ * Influences should be applied as soon as they are received.
+ * Perceptions are propagated as soon as they are received.
+ * @author Alexandre Lombard
+ */
+class DirectInfluenceReactionStrategy extends Object implements InfluenceReactionStrategy {
+
+	def influenceReceived(source : Address, propagate : ()=>Object) {
+		propagate.apply
+	}
+	
+	def perceptionReceived(destination : Address, propagate : ()=>Object) {
+		propagate.apply
+	}
+	
+}

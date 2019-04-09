@@ -26,7 +26,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 	
 	val targetRadius = 1.0f
 	val startupDelayMs = 5000
-	val periodMs = 25
+	val periodMs = 100
 	val avoidanceRadius = 1.0f
 	val slidingScaling = 15f
 	val attractionFactor = 15f

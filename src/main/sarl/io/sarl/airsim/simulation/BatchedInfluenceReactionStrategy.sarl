@@ -1,0 +1,92 @@
+package io.sarl.airsim.simulation
+
+import io.sarl.lang.core.Address
+import java.util.Collection
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingQueue
+
+/** 
+ * Influences and perceptions are collected, they are propagated only when a condition
+ * has been met.
+ * An agent is able to emit several influences without them being applied immediately. So it can has
+ * several pending influences. If so, they will be all emitted at once later.
+ * The same goes for perceptions.
+ * @author Alexandre Lombard
+ */
+class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
+
+	val perceptions = new ConcurrentHashMap<Address, BlockingQueue<()=>Object>>
+	val influences = new ConcurrentHashMap<Address, BlockingQueue<()=>Object>>
+	
+	val perceptionPropagationCondition : (Long, Collection<Address>)=>Boolean
+	val influencePropagationCondition : (Long, Collection<Address>)=>Boolean
+	
+	var perceptionsPropagationListener : ()=>Object
+	var influencesPropagationListener : ()=>Object
+	
+	val influenceBufferSize: int
+	
+	var lastPerceptionPropagationTimeMs = 0L
+	var lastInfluencePropagationTimeMs = 0L
+	
+	new(perceptionPropagationCondition : (Long, Collection<Address>)=>Boolean,
+		influencePropagationCondition : (Long, Collection<Address>)=>Boolean,
+		influenceBufferSize: int = 0) {
+		this.perceptionPropagationCondition = perceptionPropagationCondition
+		this.influencePropagationCondition = influencePropagationCondition
+		this.influenceBufferSize = influenceBufferSize
+	}
+	
+	def perceptionReceived(destination : Address, propagate : ()=>Object) {
+		if(!this.perceptions.containsKey(destination))
+			this.perceptions.put(destination, new LinkedBlockingQueue)
+			
+		this.perceptions.get(destination).add(propagate)
+		
+		if(this.perceptionPropagationCondition.apply(System.currentTimeMillis - this.lastPerceptionPropagationTimeMs, this.perceptions.keySet)) {
+			this.perceptions.values.forEach[ it.forEach [it.apply] ]
+			this.perceptions.clear
+			this.lastPerceptionPropagationTimeMs = System.currentTimeMillis
+			firePerceptionsPropagated
+		}
+	}
+	
+	def influenceReceived(source : Address, propagate : ()=>Object) {
+		if(!this.influences.containsKey(source))
+			this.influences.put(source, new LinkedBlockingQueue)
+		
+		// If there are too much influences for a single emitter, we poll the oldest
+		if (this.influenceBufferSize > 0 && this.influences.get(source).size() >= this.influenceBufferSize) {
+			this.influences.get(source).poll
+		}
+		
+		this.influences.get(source).add(propagate)
+		
+		if (this.influencePropagationCondition.apply(System.currentTimeMillis - this.lastInfluencePropagationTimeMs, this.influences.keySet)) {
+			this.influences.values.forEach[ it.forEach [it.apply] ]
+			this.influences.clear
+			this.lastInfluencePropagationTimeMs = System.currentTimeMillis
+			fireInfluencesPropagated
+		}
+	}
+	
+	def onPerceptionsPropagated(action: ()=>Object) {
+		this.perceptionsPropagationListener = action
+	}
+	
+	def onInfluencesPropagated(action: ()=>Object) {
+		this.influencesPropagationListener = action
+	}
+	
+	protected def firePerceptionsPropagated() {
+		if(this.perceptionsPropagationListener !== null)
+			this.perceptionsPropagationListener.apply	
+	}
+	
+	protected def fireInfluencesPropagated() {
+		if(this.influencesPropagationListener !== null)
+			this.influencesPropagationListener.apply	
+	}
+	
+}

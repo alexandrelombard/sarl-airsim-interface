@@ -16,12 +16,14 @@ import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Destroy
 import io.sarl.core.Initialize
 import io.sarl.core.Logging
-import io.sarl.core.Schedules
 import io.sarl.lang.core.Address
 import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
-import java.util.concurrent.ConcurrentHashMap
+import io.sarl.core.Schedules
+import io.sarl.airsim.simulation.BatchedInfluenceReactionStrategy
+import io.sarl.airsim.simulation.DirectInfluenceReactionStrategy
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -34,22 +36,20 @@ agent SimulationControllerAgent {
 	uses Logging, DefaultContextInteractions, Schedules
 	
 	// TODO Manage the simulation schedule: i.e. pause the simulation when the agents are computing their commands, and simulate for a fixed step 
-	
-	/** The perception period for all drones */
-	val perceptionDelayMs = 100
-	
+
 	/** The simulation step */
 	val simulationStepMs = 100.0
 	
 	// Temporary solution to manage the affectation of the drones to the agents
-	//val availableDrones = newLinkedList("S1", "S3")
-	//val availableDrones = newLinkedList("S0", "S1", "S2", "S3")
-	val availableDrones = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9")
+	val availableBodies = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9")
 	//val availableDrones = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19")
-	val affectedDrones = new ConcurrentHashMap<Address, String>
-	
-	/** A map making the link between an address and a flag indicating if an action has been performed */
-	val actionFlags = new ConcurrentHashMap<Address, Boolean>
+	val affectedBodies = new ConcurrentHashMap<Address, String>
+
+	/** The influence/reaction strategy defining when influence and perceptions should be propagated */
+	val influenceReactionStrategy = new DirectInfluenceReactionStrategy()
+	/** Perceptions are propagated as soon as they are received, influences as soon as every one has sent one */
+//	val influenceReactionStrategy = new BatchedInfluenceReactionStrategy(
+//			[t, p|true], [t, i|t > simulationStepMs && i.size >= affectedBodies.size])
 	
 	// Attributes used to access AirSim API
 	val loop = EventLoop.defaultEventLoop()
@@ -57,43 +57,24 @@ agent SimulationControllerAgent {
 	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
 	
 	on Initialize {
-		Collections.shuffle(availableDrones)
-
-		multirotorClient.simPause(true)
-
-		atFixedDelay(perceptionDelayMs) [
-			// Fetch the lidar data and propagate it
-//			affectedDrones.mapValues[multirotorClient.getLidarData("Lidar", it)].forEach [ k : Address, v |
-//				emit(new LidarDataPerception(v))[it == k]
-//			]
-
-			// Fetch the multirotor state info and propagate it
-			affectedDrones.mapValues[multirotorClient.getMultirotorState(it)].forEach [ k : Address, v |
-				emit(new MultirotorStatePerception(v))[it == k]
-			]
-
-			// Fetch the sim pose and propagate it
-			affectedDrones.mapValues[ multirotorClient.simGetObjectPose(it)].forEach [ k : Address, v |
-				emit(new SimPosePerception(v))[it == k]
-			]
-
-			affectedDrones.mapValues[multirotorClient.simGetGroundTruthKinematics(it)].forEach [ k : Address, v |
-				emit(new SimGroundTruthKinematicsPerception(v))[it == k]
-			]
-			
-			// If each drone has performed an action, we run a simulation step
-			if (actionFlagsCount === affectedDrones.size) {
-				info("Applying actions...")
-				
-				resetActionFlags()
-				
-				multirotorClient.simContinueForTime(simulationStepMs)
-				Thread.sleep(simulationStepMs.longValue)
-				multirotorClient.simPause(true)
-			} else {
-				info("Actions received: " + actionFlagsCount)
-			}
-		]
+		Collections.shuffle(availableBodies)
+		
+		// Scheduling according to the direct influence/reaction strategy
+		// Perceptions are retrieved regularly, simulation runs in real-time
+		atFixedDelay(10) [ retrievePerceptions ]
+		
+		// Scheduling according to the batched influence/reaction strategy
+		// Perceptions are retrieved only after influences have been applied, simulation runs with fixed steps
+		
+//		multirotorClient.simPause(true)
+//		
+//		simulationStrategy.onInfluencesPropagated [
+//			info("Influences applied, running a step...")
+//			
+//			runSimulationStep
+//			
+//			return null
+//		]
 	}
 
 	on Destroy {
@@ -104,60 +85,113 @@ agent SimulationControllerAgent {
 	 * When a drone emits the take-off instruction, transfers it to AirSim
 	 */
 	on Takeoff {
-		markAction(occurrence.source)
-		multirotorClient.takeoffAsync(20.0f, affectOrGetDrone(occurrence.source))
+		val body = affectOrGetBody(occurrence.source)
+		this.influenceReactionStrategy.influenceReceived(occurrence.source) [
+			multirotorClient.takeoffAsync(20.0f, body)
+		]
 	}
 
 	/** 
 	 * When a drone emits the move-by-velocity instruction, transfers it to AirSim
 	 */
 	on MoveByVelocity {
-		markAction(occurrence.source)
-		multirotorClient.moveByVelocityAsync(
+		val body = affectOrGetBody(occurrence.source)
+		this.influenceReactionStrategy.influenceReceived(occurrence.source) [
+			multirotorClient.moveByVelocityAsync(
 			occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
-			new YawMode(), affectOrGetDrone(occurrence.source))
+			new YawMode(), body)
+		]
 	}
 
 	/** 
 	 * When a drone emits the set-vehicle-pose instruction, transfers it to AirSim
 	 */
 	on SetVehiclePose {
-		markAction(occurrence.source)
-		multirotorClient.simSetVehiclePose(occurrence.pose, true, affectOrGetDrone(occurrence.source))
+		val body = affectOrGetBody(occurrence.source)
+		this.influenceReactionStrategy.influenceReceived(occurrence.source) [
+			multirotorClient.simSetVehiclePose(occurrence.pose, true, body)
+			null
+		]
 	}
 	
-	/**
+	/** Retrieve the perceptions for a single agent */
+	private def retrieveAgentPerceptions(address : Address, name: String) {
+		val state = multirotorClient.getMultirotorState(name)
+		val pose = multirotorClient.simGetObjectPose(name)
+		val kinematics = multirotorClient.simGetGroundTruthKinematics(name)
+
+		this.influenceReactionStrategy.perceptionReceived(address) [
+			emit(new MultirotorStatePerception(state))[it == address]
+			emit(new SimPosePerception(pose))[it == address]
+			emit(new SimGroundTruthKinematicsPerception(kinematics))[it == address]
+			return null
+		]
+	}
+	
+	private def runSimulationStep {
+		multirotorClient.simContinueForTime(simulationStepMs)
+
+		// Note: perceptions should not be retrieved while sleeping
+		Thread.sleep(simulationStepMs.longValue)
+
+		retrievePerceptions()
+
+		multirotorClient.simPause(true)
+	}
+	
+	/** Retrieve the perceptions for all agents */
+	private def retrievePerceptions {
+		// Fetch the multirotor state info and propagate it
+		affectedBodies.mapValues[multirotorClient.getMultirotorState(it)].forEach [ k : Address, v |
+				this.influenceReactionStrategy.perceptionReceived(k) [
+				emit(new MultirotorStatePerception(v))[it == k]
+				return null
+			]
+		]
+
+		// Fetch the sim pose and propagate it
+		affectedBodies.mapValues[multirotorClient.simGetObjectPose(it)].forEach [ k : Address, v |
+			this.influenceReactionStrategy.perceptionReceived(k) [
+				emit(new SimPosePerception(v))[it == k]
+				return null
+			]
+		]
+
+		// Fetch the sim ground truth kinematics and propagate it
+		affectedBodies.mapValues[multirotorClient.simGetGroundTruthKinematics(it)].forEach [ k : Address, v |
+			this.influenceReactionStrategy.perceptionReceived(k) [
+				emit(new SimGroundTruthKinematicsPerception(v))[it == k]
+				return null
+			]
+		]
+	}
+
+	/** 
 	 * This function affects a drone to an agent (if it has no drone affected), or it returns the name of the
 	 * affected drone in the other case.
 	 */
-	private def affectOrGetDrone(address : Address) {
+	private def affectOrGetBody(address : Address) {
 		var name: String
-		if (!affectedDrones.containsKey(address)) {
-			synchronized (this.availableDrones) {
-				name = availableDrones.pop()
+		if (!affectedBodies.containsKey(address)) {
+			synchronized (this.availableBodies) {
+				if(availableBodies.isEmpty) {
+					error("No more available body...")
+					return ""
+				}
+				
+				name = availableBodies.pop()
 			}
 			info("Received affectation: " + address.UUID + " - " + name)
-			affectedDrones.put(address, name)
+			affectedBodies.put(address, name)
 			multirotorClient.enableApiControl(true, name)
+			
+			// Retrieve the initial perceptions for this agent
+			retrieveAgentPerceptions(address, name)
 		} else {
-			name = affectedDrones.get(address)
+			name = affectedBodies.get(address)
 		}
 			
 		return name
 	}
 	
-	/** Flag an action */
-	private def markAction(a: Address) {
-		this.actionFlags.put(a, true)
-	}
-	
-	/** Count the number of agents having performed an action */
-	private def actionFlagsCount() {
-		return this.actionFlags.values.filter[it === true].size
-	}
-	
-	/** Reset the action flags */
-	private def resetActionFlags() {
-		this.actionFlags.clear
-	}
 }
