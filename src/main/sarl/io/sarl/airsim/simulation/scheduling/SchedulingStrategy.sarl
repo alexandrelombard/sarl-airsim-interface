@@ -1,0 +1,14 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.scheduling
+
+/** 
+ * Interface for a scheduling strategy, it only contains a method which will be
+ * the loop of the simulation SARL side: i.e. getting the perceptions, running the simulation side.
+ * @author Alexandre Lombard
+ * 
+ */
+interface SchedulingStrategy {
+	def loop
+}

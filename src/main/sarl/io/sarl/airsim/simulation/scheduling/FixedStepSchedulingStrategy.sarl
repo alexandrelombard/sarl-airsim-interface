@@ -1,0 +1,37 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.scheduling
+
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
+
+/** 
+ * Fixed step scheduling strategy. The simulation is paused, then perceptions are retrieved, then
+ * simulation continues for a given amount of time, etc. for each loop.
+ * @author Alexandre Lombard
+ * 
+ */
+class FixedStepSchedulingStrategy implements SchedulingStrategy {
+	
+	val retrievePerceptions: Procedure0
+	val pause: Procedure0
+	val continueSimulation: Procedure0
+	
+	new (
+		retrievePerceptions: Procedure0,
+		pause: Procedure0,
+		continueSimulation: Procedure0) {
+		this.retrievePerceptions = retrievePerceptions
+		this.pause = pause
+		this.continueSimulation = continueSimulation
+	}
+	
+	def loop {
+		pause.apply
+
+		retrievePerceptions.apply
+		
+		continueSimulation.apply()
+	}
+
+}

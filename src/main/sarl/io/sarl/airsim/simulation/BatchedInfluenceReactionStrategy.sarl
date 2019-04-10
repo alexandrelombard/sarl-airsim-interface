@@ -5,6 +5,7 @@ import java.util.Collection
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
 
 /** 
  * Influences and perceptions are collected, they are propagated only when a condition
@@ -22,8 +23,8 @@ class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
 	val perceptionPropagationCondition : (Long, Collection<Address>)=>Boolean
 	val influencePropagationCondition : (Long, Collection<Address>)=>Boolean
 	
-	var perceptionsPropagationListener : ()=>Object
-	var influencesPropagationListener : ()=>Object
+	var perceptionsPropagationListener : Procedure0
+	var influencesPropagationListener : Procedure0
 	
 	// region Buffer parameters
 	val influenceBufferSize: int
@@ -93,11 +94,11 @@ class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
 		this.influences.clear
 	}
 	
-	def onPerceptionsPropagated(action: ()=>Object) {
+	def onPerceptionsPropagated(action: Procedure0) {
 		this.perceptionsPropagationListener = action
 	}
 	
-	def onInfluencesPropagated(action: ()=>Object) {
+	def onInfluencesPropagated(action : Procedure0) {
 		this.influencesPropagationListener = action
 	}
 	

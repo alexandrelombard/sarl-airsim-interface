@@ -1,0 +1,26 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.scheduling
+
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
+
+/** 
+ * Real-time scheduling strategy. When a loop is run the perceptions are retrieved.
+ * The simulation is never paused.
+ * @author Alexandre Lombard
+ * 
+ */
+class RealTimeSchedulingStrategy extends Object implements SchedulingStrategy {
+	
+	val retrievePerceptions: Procedure0
+	
+	new (retrievePerceptions: Procedure0) {
+		this.retrievePerceptions = retrievePerceptions
+	}
+	
+	def loop {
+		this.retrievePerceptions.apply
+	}
+	
+}

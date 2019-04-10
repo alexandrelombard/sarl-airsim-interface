@@ -12,23 +12,24 @@ import io.sarl.airsim.influences.sim.SetVehiclePose
 import io.sarl.airsim.perceptions.MultirotorStatePerception
 import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 import io.sarl.airsim.perceptions.sim.SimPosePerception
+import io.sarl.airsim.simulation.BatchedInfluenceReactionStrategy
+import io.sarl.airsim.simulation.scheduling.FixedStepBlockingSchedulingStrategy
+import io.sarl.airsim.simulation.scheduling.SchedulingStrategy
 import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Destroy
 import io.sarl.core.Initialize
 import io.sarl.core.Logging
+import io.sarl.core.Schedules
 import io.sarl.lang.core.Address
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
-import io.sarl.core.Schedules
-import io.sarl.airsim.simulation.BatchedInfluenceReactionStrategy
-import io.sarl.airsim.simulation.DirectInfluenceReactionStrategy
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
  * dispatching the perceptions .
- * This agent has basically 3 main capacities:
+ * This agent has basically 3 main roles and capacities:
  * - Managing the propagation of perceptions and influences
  * - Managing the simulation schedule
  * - Managing the affectation of bodies to agents
@@ -48,6 +49,8 @@ agent SimulationControllerAgent {
 	val availableBodies = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9")
 	//val availableDrones = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19")
 	val affectedBodies = new ConcurrentHashMap<Address, String>
+	
+	var schedulingStrategy: SchedulingStrategy
 
 	/** The influence/reaction strategy defining when influence and perceptions should be propagated */
 //	val influenceReactionStrategy = new DirectInfluenceReactionStrategy()
@@ -72,38 +75,30 @@ agent SimulationControllerAgent {
 		// Standard scheduling according to the direct influence/reaction strategy (it would also work with Batched but forbidding
 		// influences from being applied immediately is not well-suited with real-time simulation)
 		// Perceptions are retrieved regularly, simulation runs in real-time
-//		atFixedDelay(10) [ retrievePerceptions ]
+//		this.influenceReactionStrategy = new DirectInfluenceReactionStrategy()
+// 		this.schedulingStrategy = new RealTimeSchedulingStrategy[retrievePerceptions]
 		
 		// Scheduling according to the batched influence/reaction strategy
 		// Perceptions are retrieved only after influences have been applied, simulation runs with fixed steps
-		val influencesPropagated = newArrayList(false)
-		influenceReactionStrategy.onInfluencesPropagated[|
-			info("Influences propagated...")
-			influencesPropagated.set(0, true)
-		]
 		
+		// At the beginning we started paused
 		multirotorClient.simPause(true)
 
-		atFixedDelay(simulationStepMs.longValue) [
-			multirotorClient.simPause(true)
-			
-			retrievePerceptions()
-			
-			// Wait until influences are being propagated
-			// FIXME Active wait
-			while(!influencesPropagated.get(0)) {
-				info("Influences not propagated...")
-				Thread.sleep(10)
-			}
-				
-
-			info("Continuing simulation...")
-			
-			multirotorClient.simContinueForTime(simulationStepMs)
-
-			// Flag the influences as not propagated
-			influencesPropagated.set(0, false)
+		//val influencesPropagated : Boolean[] = #[false]
+		val influencesPropagated = new ActiveWaitLock()
+		influenceReactionStrategy.onInfluencesPropagated[
+			info("Influences propagated...")
+			influencesPropagated.unlock
 		]
+
+		this.schedulingStrategy = new FixedStepBlockingSchedulingStrategy(
+			[retrievePerceptions],																		// How perceptions are retrieved?
+			[multirotorClient.simPause(true)],															// How the simulation is paused?
+			[!influencesPropagated.isLocked], 															// When can I continue?
+			[influencesPropagated.lock multirotorClient.simContinueForTime(simulationStepMs)]) 			// What do I do to continue?
+		
+		// Schedule the loop
+		atFixedDelay(simulationStepMs.longValue) [ schedulingStrategy.loop ]
 	}
 
 	on Destroy {
@@ -210,6 +205,22 @@ agent SimulationControllerAgent {
 		}
 			
 		return name
+	}
+	
+	private static class ActiveWaitLock {
+		var locked = false
+
+		synchronized def lock {
+			this.locked = true
+		}
+
+		synchronized def unlock {
+			this.locked = false
+		}
+		
+		synchronized def isLocked {
+			return this.locked
+		}
 	}
 	
 }
