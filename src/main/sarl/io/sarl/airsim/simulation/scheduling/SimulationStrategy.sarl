@@ -1,0 +1,23 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.scheduling
+
+/** 
+ * Interface for a scheduling strategy, it only contains a method which will be
+ * the loop of the simulation SARL side: i.e. getting the perceptions, running the simulation side.
+ * @author Alexandre Lombard
+ * 
+ */
+interface SimulationStrategy {
+	// Note: 3 possible scheduling policies:
+	// - Get perceptions at a fixed step, real-time simulation
+	// - Fixed-step simulation, get the perception one time for each step
+	// - Fixed-step simulation with blocking condition, like the previous one, except that a blocking condition can interrupt the
+	//   execution (e.g. if there is an agent who doesn't have sent its influence)
+	
+	/**
+	 * Run a simulation loop (SARL side)
+	 */
+	def loop
+}

@@ -4,6 +4,7 @@
 package io.sarl.airsim.simulation
 
 import io.sarl.lang.core.Address
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
 
 /** 
  * Influences should be applied as soon as they are received.
@@ -12,11 +13,11 @@ import io.sarl.lang.core.Address
  */
 class DirectInfluenceReactionStrategy extends Object implements InfluenceReactionStrategy {
 
-	def influenceReceived(source : Address, propagate : ()=>Object) {
+	def influenceReceived(source : Address, propagate : Procedure0) {
 		propagate.apply
 	}
 	
-	def perceptionReceived(destination : Address, propagate : ()=>Object) {
+	def perceptionReceived(destination : Address, propagate : Procedure0) {
 		propagate.apply
 	}
 	

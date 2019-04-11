@@ -17,8 +17,8 @@ import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
  */
 class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
 
-	val perceptions = new ConcurrentHashMap<Address, BlockingQueue<()=>Object>>
-	val influences = new ConcurrentHashMap<Address, BlockingQueue<()=>Object>>
+	val perceptions = new ConcurrentHashMap<Address, BlockingQueue<Procedure0>>
+	val influences = new ConcurrentHashMap<Address, BlockingQueue<Procedure0>>
 	
 	val perceptionPropagationCondition : (Long, Collection<Address>)=>Boolean
 	val influencePropagationCondition : (Long, Collection<Address>)=>Boolean
@@ -43,7 +43,7 @@ class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
 		this.influenceDropOld = influenceDropOld
 	}
 	
-	def perceptionReceived(destination : Address, propagate : ()=>Object) {
+	def perceptionReceived(destination : Address, propagate : Procedure0) {
 		if(!this.perceptions.containsKey(destination))
 			this.perceptions.put(destination, new LinkedBlockingQueue)
 			
@@ -57,7 +57,7 @@ class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
 		}
 	}
 	
-	def influenceReceived(source : Address, propagate : ()=>Object) {
+	def influenceReceived(source : Address, propagate : Procedure0) {
 		if(!this.influences.containsKey(source))
 			this.influences.put(source, new LinkedBlockingQueue)
 		

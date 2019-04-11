@@ -11,7 +11,7 @@ import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
  * @author Alexandre Lombard
  * 
  */
-class FixedStepSchedulingStrategy implements SchedulingStrategy {
+class FixedStepSimulationStrategy implements SimulationStrategy {
 	
 	val retrievePerceptions: Procedure0
 	val pause: Procedure0

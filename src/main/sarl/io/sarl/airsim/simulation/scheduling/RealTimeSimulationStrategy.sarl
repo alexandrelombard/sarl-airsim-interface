@@ -11,7 +11,7 @@ import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
  * @author Alexandre Lombard
  * 
  */
-class RealTimeSchedulingStrategy extends Object implements SchedulingStrategy {
+class RealTimeSimulationStrategy extends Object implements SimulationStrategy {
 	
 	val retrievePerceptions: Procedure0
 	

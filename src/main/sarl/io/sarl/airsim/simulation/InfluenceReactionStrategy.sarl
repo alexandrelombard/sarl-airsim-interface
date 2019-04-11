@@ -4,6 +4,7 @@
 package io.sarl.airsim.simulation
 
 import io.sarl.lang.core.Address
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
 
 /** 
  * Represents an abstract simulation scheduling strategy.
@@ -17,11 +18,11 @@ interface InfluenceReactionStrategy {
 	 * This must be called when a perception is received, the perception management parameter specifies
 	 * how the perception should be propagated.
 	 */
-	def perceptionReceived(destination : Address, propagate : ()=>Object)
+	def perceptionReceived(destination : Address, propagate : Procedure0)
 	/**
 	 * This must be called when an influence is received, the influence management parameter specifies
 	 * how the influence should be propagated.
 	 */
-	def influenceReceived(source : Address, propagate : ()=>Object)
+	def influenceReceived(source : Address, propagate : Procedure0)
 	
 }
