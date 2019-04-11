@@ -1,7 +1,7 @@
 /** 
  * 
  */
-package io.sarl.airsim.simulation
+package io.sarl.airsim.simulation.influence
 
 import io.sarl.lang.core.Address
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure0

@@ -1,4 +1,4 @@
-package io.sarl.airsim.simulation
+package io.sarl.airsim.simulation.influence
 
 import io.sarl.lang.core.Address
 import java.util.Collection

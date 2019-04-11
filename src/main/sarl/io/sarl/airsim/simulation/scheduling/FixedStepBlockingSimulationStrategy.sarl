@@ -44,12 +44,15 @@ class FixedStepBlockingSimulationStrategy implements SimulationStrategy {
 		continueSimulation.apply()
 	}
 
-	static def fixedStepBlockingSchedulingStrategy(init : Procedure1<FixedStepBlockingSchedulingStrategyBuilder>) {
-		val strategyBuilder = new FixedStepBlockingSchedulingStrategyBuilder() => init
+	/** 
+	 * Builds a FixedStepBlockingSimulationStrategy
+	 */
+	static def fixedStepBlockingSimulationStrategy(init : Procedure1<FixedStepBlockingSimulationStrategyBuilder>) {
+		val strategyBuilder = new FixedStepBlockingSimulationStrategyBuilder() => init
 		return strategyBuilder.build
 	}
 
-	public static class FixedStepBlockingSchedulingStrategyBuilder {
+	static class FixedStepBlockingSimulationStrategyBuilder {
 		public var retrievePerceptionsBy : Procedure0
 		public var pauseBy : Procedure0
 		public var canContinueIf : ()=>Boolean

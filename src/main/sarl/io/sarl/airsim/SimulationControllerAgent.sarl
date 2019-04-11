@@ -12,7 +12,7 @@ import io.sarl.airsim.influences.sim.SetVehiclePose
 import io.sarl.airsim.perceptions.MultirotorStatePerception
 import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 import io.sarl.airsim.perceptions.sim.SimPosePerception
-import io.sarl.airsim.simulation.BatchedInfluenceReactionStrategy
+import io.sarl.airsim.simulation.influence.BatchedInfluenceReactionStrategy
 import io.sarl.airsim.simulation.allocation.FcfsFixedSizePoolAllocationStrategy
 import io.sarl.airsim.simulation.scheduling.SimulationStrategy
 import io.sarl.airsim.utils.ActiveWaitLock
@@ -25,7 +25,7 @@ import java.util.Collections
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
 
-import static io.sarl.airsim.simulation.scheduling.FixedStepBlockingSimulationStrategy.fixedStepBlockingSchedulingStrategy
+import static io.sarl.airsim.simulation.scheduling.FixedStepBlockingSimulationStrategy.fixedStepBlockingSimulationStrategy
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -83,7 +83,7 @@ agent SimulationControllerAgent {
 			influencesPropagated.unlock
 		]
 
-		this.simulationStrategy = fixedStepBlockingSchedulingStrategy [
+		this.simulationStrategy = fixedStepBlockingSimulationStrategy [
 			retrievePerceptionsBy = [ retrievePerceptions ]
 			pauseBy = [ multirotorClient.simPause(true) ]
 			canContinueIf = [!influencesPropagated.isLocked ]

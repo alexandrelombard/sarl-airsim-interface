@@ -4,6 +4,7 @@
 package io.sarl.airsim.simulation.scheduling
 
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 
 /** 
  * Fixed step scheduling strategy. The simulation is paused, then perceptions are retrieved, then
@@ -31,7 +32,25 @@ class FixedStepSimulationStrategy implements SimulationStrategy {
 
 		retrievePerceptions.apply
 		
-		continueSimulation.apply()
+		continueSimulation.apply
+	}
+
+	/** 
+	 * Builds a FiexStepSimulationStrategy
+	 */
+	static def fixedStepSimulationStrategy(init : Procedure1<FixedStepSimulationStrategyBuilder>) {
+		val strategyBuilder = new FixedStepSimulationStrategyBuilder => init
+		return strategyBuilder.build
+	}
+
+	static class FixedStepSimulationStrategyBuilder {
+		public var retrievePerceptionsBy : Procedure0
+		public var pauseBy : Procedure0
+		public var continueSimulationBy : Procedure0
+
+		def build {
+			return new FixedStepSimulationStrategy(retrievePerceptionsBy, pauseBy, continueSimulationBy)
+		}
 	}
 
 }

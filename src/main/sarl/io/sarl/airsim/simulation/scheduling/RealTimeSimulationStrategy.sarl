@@ -4,6 +4,7 @@
 package io.sarl.airsim.simulation.scheduling
 
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 
 /** 
  * Real-time scheduling strategy. When a loop is run the perceptions are retrieved.
@@ -21,6 +22,22 @@ class RealTimeSimulationStrategy extends Object implements SimulationStrategy {
 	
 	def loop {
 		this.retrievePerceptions.apply
+	}
+
+	/**
+	 * Builds a RealTimeSimulationStrategy
+	 */
+	static def realTimeSimulationStrategy(init : Procedure1<RealTimeSimulationStrategyBuilder>) {
+		val strategyBuilder = new RealTimeSimulationStrategyBuilder => init
+		return strategyBuilder.build
+	}
+
+	static class RealTimeSimulationStrategyBuilder {
+		public var retrievePerceptionsBy : Procedure0
+
+		def build {
+			return new RealTimeSimulationStrategy(retrievePerceptionsBy)
+		}
 	}
 	
 }
