@@ -1,0 +1,16 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.events
+
+import io.sarl.airsim.requests.RequestEvent
+
+/** 
+ * @author Alexandre Lombard
+ * 
+ */
+event IsSimulationInitialized extends RequestEvent {
+	new() {
+		super(SimulationInitialized)
+	}
+}

@@ -19,11 +19,11 @@ agent BootAgent {
 	val agentToSpawn = 10
 
 	on Initialize {
-		// Spawn the simulation controller agent
-		spawn(SimulationControllerAgent)
-		
 		// Run the drone spawning strategy
 		runSpawnStrategy()
+		
+		// Spawn the simulation controller agent
+		spawn(SimulationControllerAgent)
 	}
 	
 	def runSpawnStrategy() {

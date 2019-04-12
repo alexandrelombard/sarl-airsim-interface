@@ -1,0 +1,18 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.requests
+
+import io.sarl.lang.core.Event
+
+/** 
+ * @author Alexandre Lombard
+ * 
+ */
+event RequestEvent extends Event {
+	val expectedAnswer: Class<? extends Event>
+	
+	new(expectedAnswer: Class<? extends Event>) {
+		this.expectedAnswer = expectedAnswer
+	}
+}

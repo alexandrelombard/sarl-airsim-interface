@@ -9,7 +9,7 @@ package io.sarl.airsim.utils
  * 
  */
 class ActiveWaitLock extends Object {
-	var locked = false
+	volatile var locked = false
 
 	/**
 	 * Sets the lock state to true

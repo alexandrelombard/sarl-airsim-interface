@@ -1,0 +1,11 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.events
+
+/** 
+ * Event emitted when the simulation has been initialized
+ * @author Alexandre Lombard
+ * 
+ */
+event SimulationInitialized

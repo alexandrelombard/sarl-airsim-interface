@@ -13,6 +13,11 @@ import io.sarl.core.Initialize
 import io.sarl.core.Logging
 import io.sarl.core.Schedules
 import io.sarl.airsim.filters.mean.Vector3MeanFilter
+import io.sarl.airsim.simulation.events.SimulationInitialized
+import io.sarl.airsim.simulation.events.IsSimulationInitialized
+import io.sarl.airsim.requests.RequestSkill
+import io.sarl.airsim.requests.RequestCapacity
+import io.sarl.airsim.SimulationControllerAgent
 
 /** 
  * Drone behavior: defines a target point (the opposite of the start point) and try to reach this target
@@ -28,7 +33,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 	val startupDelayMs = 5000
 	val periodMs = 100
 	val avoidanceRadius = 1.0f
-	val slidingScaling = 15f
+	val slidingScaling = 1f
 	val attractionFactor = 15f
 	
 	val zOffset = -2.5f
@@ -36,10 +41,29 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 	val meanFilter = new Vector3MeanFilter(6)
 
 	on Initialize {
+		//
+	}
+	
+	on SimulationInitialized {
+		initialize
+	}
+
+	on SimPosePerception {
+		// Update the internal pose state and fix the target point if not set
+		if(this.targetPoint === null) {
+			//this.targetPoint = new Vector3(
+			//	-this.pose.position.getX(),
+			//	-this.pose.position.getY(),
+			//	this.pose.position.getZ() + zOffset) 		// We don't invert the Z, but we add an offset so it's not on the ground
+			this.targetPoint = computeTargetPoint(this.pose.position.toVector3)
+		}
+	}
+	
+	def initialize {
 		info("Drone agent is starting...")
 
 		// Note: before the takeoff, the drone is not affected
-		emit (new Takeoff)
+		emit(new Takeoff)
 
 		in(startupDelayMs) [
 			every(periodMs) [
@@ -60,8 +84,8 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 						// this.initialPose.position.getZ() + zOffset)
 						// } else {
 						// this.targetPoint = new Vector3(this.initialPose.position.getX(), this.initialPose.position.getY(), this.initialPose.position.getZ() + zOffset)
-					//		}
-					//	}
+						// }
+						//	}
 					// }
 						// For the simulation, the agent must send an influence even if it's an empty one
 						emit(new MoveByVelocity(0.0f, 0.0f, 0.0f, periodMs / 1000.0f))
@@ -72,23 +96,12 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 						emit(
 							new MoveByVelocity(movementForce.getX(), movementForce.getY(), movementForce.getZ(),
 								periodMs / 1000.0f))
-					}	
-				} catch (t: Throwable) {
+					}
+				} catch (t : Throwable) {
 					t.printStackTrace()
 				}
 			]
 		]
-	}
-
-	on SimPosePerception {
-		// Update the internal pose state and fix the target point if not set
-		if(this.targetPoint === null) {
-			//this.targetPoint = new Vector3(
-			//	-this.pose.position.getX(),
-			//	-this.pose.position.getY(),
-			//	this.pose.position.getZ() + zOffset) 		// We don't invert the Z, but we add an offset so it's not on the ground
-			this.targetPoint = computeTargetPoint(this.pose.position.toVector3)
-		}
 	}
 	
 	def computeForce(): Vector3 {
@@ -183,7 +196,10 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					new Vector3()
 				} else {
 					// There may be a collision
-					val t = computeCollisionTime(d, selfPosition, selfDirection, otherPosition, otherDirection.toVector3)
+				// val t = computeCollisionTime(d, selfPosition, selfDirection, otherPosition, otherDirection.toVector3)
+					val t = Math.min(
+						computeCollisionTime(d, selfPosition, selfDirection, otherPosition, otherDirection.toVector3),
+						computeCollisionTime(2 * avoidanceRadius, selfPosition, selfDirection, otherPosition, otherDirection.toVector3))
 
 					if(t < 1e-3f)
 						return new Vector3() // Too late, we ignore to avoid errors further
@@ -208,7 +224,6 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					val slidingDirectionXY = new Vector3(-obstacleDirection.getY(), obstacleDirection.getX(), 0.0f)
 					//val slidingDirectionXY = new Vector3()
 					val slidingDirectionXZ = new Vector3(obstacleDirection.getZ(), 0.0f, -obstacleDirection.getX())
-					//val slidingDirection = (slidingDirectionXY * 0.25f + slidingDirectionXZ * 0.75f).normalized
 					val slidingDirection = (slidingDirectionXY + slidingDirectionXZ).normalized
 					
 					val slidingScale = computeSlidingScale(t, 0.25f, 4f, 10f)
@@ -237,7 +252,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					(Math.sin(angle) * symmetry.getX() + Math.cos(angle) * symmetry.getY()).floatValue,
 					symmetry.getZ())
 					
-		return rotation
+		return symmetry
 	}
 	
 	def switchTargetPoint() {
