@@ -18,6 +18,9 @@ import io.sarl.airsim.simulation.events.IsSimulationInitialized
 import io.sarl.airsim.requests.RequestSkill
 import io.sarl.airsim.requests.RequestCapacity
 import io.sarl.airsim.SimulationControllerAgent
+import io.sarl.airsim.perceptions.MultirotorStatePerception
+import fr.utbm.airsim.api.LandedState
+import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 
 /** 
  * Drone behavior: defines a target point (the opposite of the start point) and try to reach this target
@@ -29,10 +32,12 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 
 	uses Logging, DefaultContextInteractions, Schedules
 	
+	var initialized = false
+	
 	val targetRadius = 1.0f
 	val startupDelayMs = 5000
 	val periodMs = 100
-	val avoidanceRadius = 1.0f
+	val avoidanceRadius = 1.5f
 	val slidingScaling = 1f
 	val attractionFactor = 15f
 	
@@ -48,19 +53,32 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 		initialize
 	}
 
-	on SimPosePerception {
+	on SimPosePerception [this.targetPoint === null] {
 		// Update the internal pose state and fix the target point if not set
-		if(this.targetPoint === null) {
-			//this.targetPoint = new Vector3(
-			//	-this.pose.position.getX(),
-			//	-this.pose.position.getY(),
-			//	this.pose.position.getZ() + zOffset) 		// We don't invert the Z, but we add an offset so it's not on the ground
-			this.targetPoint = computeTargetPoint(this.pose.position.toVector3)
-		}
+		//this.targetPoint = new Vector3(
+		//	-this.pose.position.getX(),
+		//	-this.pose.position.getY(),
+		//	this.pose.position.getZ() + zOffset) 		// We don't invert the Z, but we add an offset so it's not on the ground
+		this.targetPoint = computeTargetPoint(this.pose.position.toVector3)
 	}
+	
+	on SimGroundTruthKinematicsPerception [initialized && occurrence.state.linearVelocity.length <= 0.01f] {
+		// This happens if the computed force is directed to the ground at the beginning, emit an impulsion to the sky
+		//emit(new Takeoff)
+		emit(new MoveByVelocity(new Vector3(0.0f, 0.0f, -20.0f), periodMs / 1000.0f))
+	}
+	
+//	on MultirotorStatePerception {
+//		if(initialized && occurrence.multirotorState.landedState == LandedState.LANDED) {
+//			info("" + occurrence.multirotorState.landedState)
+//			emit(new Takeoff)
+//		}
+//	}
 	
 	def initialize {
 		info("Drone agent is starting...")
+		
+		initialized = true
 
 		// Note: before the takeoff, the drone is not affected
 		emit(new Takeoff)
@@ -135,7 +153,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 			sliding = new Vector3(0f, 0f, 0f)
 
 		val attraction = computeAttraction((targetPoint - position).normalized(), sliding.length(), attractionFactor,
-			3.0f)
+			2.0f)
 		val result = (sliding * slidingScaling) + attraction
 
 		return result
@@ -226,7 +244,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					val slidingDirectionXZ = new Vector3(obstacleDirection.getZ(), 0.0f, -obstacleDirection.getX())
 					val slidingDirection = (slidingDirectionXY + slidingDirectionXZ).normalized
 					
-					val slidingScale = computeSlidingScale(t, 0.25f, 4f, 10f)
+					val slidingScale = computeSlidingScale(t, 0.25f, 6f, 10f)
 					
 					val sign = 1.0f
 					val slidingVector = slidingDirection * slidingScale.floatValue * sign

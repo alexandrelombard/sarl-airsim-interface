@@ -30,6 +30,9 @@ import static io.sarl.airsim.simulation.scheduling.FixedStepBlockingSimulationSt
 import io.sarl.airsim.simulation.events.SimulationInitialized
 import io.sarl.airsim.requests.RequestEvent
 import io.sarl.airsim.simulation.events.IsSimulationInitialized
+import org.eclipse.xtext.xbase.lib.Functions.Function2
+import org.eclipse.xtext.xbase.lib.Functions.Function1
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -80,10 +83,10 @@ agent SimulationControllerAgent {
 		// Perceptions are retrieved only after influences have been applied, simulation runs with fixed steps
 		
 		// We enable the API control for all bodies of the pool (even if they are not affected later)
-		pool.forEach[synchronized (multirotorClient) { multirotorClient.enableApiControl(true, it) }]
+		pool.forEach[val name = it synchronizedClient(name)[multirotorClient.enableApiControl(true, name)]]
 		
 		// At the beginning we started paused
-		synchronized(multirotorClient) { multirotorClient.simPause(true) }
+		synchronizedClient [it.simPause(true)]
 
 		val influencesPropagated = new ActiveWaitLock()
 		influenceReactionStrategy.onInfluencesPropagated[
@@ -93,11 +96,11 @@ agent SimulationControllerAgent {
 
 		simulationStrategy = fixedStepBlockingSimulationStrategy [
 			retrievePerceptionsBy = [ retrievePerceptions ]
-			pauseBy = [ multirotorClient.simPause(true) ]
+			pauseBy = [ synchronizedClient [ it.simPause(true) ] ]
 			canContinueIf = [!influencesPropagated.isLocked ]
 			continueSimulationBy = [
 				influencesPropagated.lock
-				synchronized (multirotorClient) { multirotorClient.simContinueForTime(simulationStepMs) }
+				synchronizedClient [ it.simContinueForTime(simulationStepMs) ]
 			]
 		]
 		
@@ -121,7 +124,7 @@ agent SimulationControllerAgent {
 		influenceReactionStrategy.influenceReceived(occurrence.source) [
 			info("Propagation of takeoff for " + body)
 			
-			synchronized(multirotorClient) { multirotorClient.takeoffAsync(20.0f, body) }
+			synchronizedClient(body) [ multirotorClient.takeoffAsync(20.0f, body) ]
 		]
 	}
 
@@ -131,11 +134,11 @@ agent SimulationControllerAgent {
 	on MoveByVelocity {
 		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
 		influenceReactionStrategy.influenceReceived(occurrence.source) [
-			synchronized(multirotorClient) { 
-				multirotorClient.moveByVelocityAsync(
+			synchronizedClient(body) [
+				it.moveByVelocityAsync(
 					occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
 					new YawMode(), body)
-			}
+			]
 		]
 	}
 
@@ -145,21 +148,52 @@ agent SimulationControllerAgent {
 	on SetVehiclePose {
 		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a,n|onAffectation(a,n)])
 		influenceReactionStrategy.influenceReceived(occurrence.source) [
-			synchronized(multirotorClient) { multirotorClient.simSetVehiclePose(occurrence.pose, true, body) }
+			synchronizedClient(body) [ it.simSetVehiclePose(occurrence.pose, true, body) ]
 		]
 	}
 	
 	/** Retrieve the perceptions for a single agent */
 	private def retrieveAgentPerceptions(address : Address, name: String) {
-		val state = synchronized(multirotorClient) { multirotorClient.getMultirotorState(name) }
-		val pose = synchronized(multirotorClient) { multirotorClient.simGetObjectPose(name) }
-		val kinematics = synchronized(multirotorClient) { multirotorClient.simGetGroundTruthKinematics(name) }
+		val state = synchronizedClient(name) [ it.getMultirotorState(name) ]
+		val pose = synchronizedClient(name) [ it.simGetObjectPose(name) ]
+		val kinematics = synchronizedClient(name) [ it.simGetGroundTruthKinematics(name) ]
 
 		influenceReactionStrategy.perceptionReceived(address) [
 			emit(new MultirotorStatePerception(state))[it == address]
 			emit(new SimPosePerception(pose))[it == address]
 			emit(new SimGroundTruthKinematicsPerception(kinematics))[it == address]
 		]
+	}
+
+	private def synchronizedClient(target : String = "", operation : Procedure1<MultirotorClientInterface>) {
+		var success = false
+
+		while (!success) {
+			try {
+				synchronized (multirotorClient) {
+					operation.apply(multirotorClient)
+					return
+				}
+			} catch (e : org.msgpack.rpc.error.RemoteError) {
+				warning("An exception occurred: " + e.message + " ; Trying to re-enable API control...")
+				multirotorClient.enableApiControl(true, target)
+			}
+		}
+	}
+	
+	private def <T> synchronizedClient(target: String = "", operation: Function1<MultirotorClientInterface, T>) : T {
+		var success = false
+		
+		while (!success) {
+			try {
+				return synchronized(multirotorClient) { operation.apply(multirotorClient) }
+			} catch (e : org.msgpack.rpc.error.RemoteError) {
+				warning("An exception occurred: " + e.message + " ; Trying to re-enable API control...")
+				multirotorClient.enableApiControl(true, target)
+			}
+		}
+		
+		return null
 	}
 	
 	
@@ -170,7 +204,7 @@ agent SimulationControllerAgent {
 	
 	private def onAffectation(address : Address, name : String) {
 		info("Received affectation: " + address.UUID + " - " + name)
-		synchronized(multirotorClient) { multirotorClient.enableApiControl(true, name) }
+		synchronizedClient(name) [ it.enableApiControl(true, name) ]
 
 		// Retrieve the initial perceptions for this agent
 		retrieveAgentPerceptions(address, name)

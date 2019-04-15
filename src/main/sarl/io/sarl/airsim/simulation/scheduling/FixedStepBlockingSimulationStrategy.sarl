@@ -35,10 +35,10 @@ class FixedStepBlockingSimulationStrategy implements SimulationStrategy {
 
 		retrievePerceptions.apply
 
-		while(this.canContinue.apply === false) {
+		while(this.canContinue.apply == false) {
 			// Wait...
 			// It's better to have a canContinue implementation relying on passive waiting
-			Thread.sleep(1)
+			Thread.sleep(10)
 		}
 		
 		continueSimulation.apply()
