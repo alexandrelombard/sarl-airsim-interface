@@ -80,10 +80,10 @@ agent SimulationControllerAgent {
 		// Perceptions are retrieved only after influences have been applied, simulation runs with fixed steps
 		
 		// We enable the API control for all bodies of the pool (even if they are not affected later)
-		pool.forEach [ multirotorClient.enableApiControl(true, it) ]
+		pool.forEach[synchronized (multirotorClient) { multirotorClient.enableApiControl(true, it) }]
 		
 		// At the beginning we started paused
-		multirotorClient.simPause(true)
+		synchronized(multirotorClient) { multirotorClient.simPause(true) }
 
 		val influencesPropagated = new ActiveWaitLock()
 		influenceReactionStrategy.onInfluencesPropagated[
@@ -95,7 +95,10 @@ agent SimulationControllerAgent {
 			retrievePerceptionsBy = [ retrievePerceptions ]
 			pauseBy = [ multirotorClient.simPause(true) ]
 			canContinueIf = [!influencesPropagated.isLocked ]
-			continueSimulationBy = [ influencesPropagated.lock multirotorClient.simContinueForTime(simulationStepMs) ]
+			continueSimulationBy = [
+				influencesPropagated.lock
+				synchronized (multirotorClient) { multirotorClient.simContinueForTime(simulationStepMs) }
+			]
 		]
 		
 //		simulationStrategy = fixedStepSimulationStrategy [
@@ -118,7 +121,7 @@ agent SimulationControllerAgent {
 		influenceReactionStrategy.influenceReceived(occurrence.source) [
 			info("Propagation of takeoff for " + body)
 			
-			multirotorClient.takeoffAsync(20.0f, body)
+			synchronized(multirotorClient) { multirotorClient.takeoffAsync(20.0f, body) }
 		]
 	}
 
@@ -128,9 +131,11 @@ agent SimulationControllerAgent {
 	on MoveByVelocity {
 		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
 		influenceReactionStrategy.influenceReceived(occurrence.source) [
-			multirotorClient.moveByVelocityAsync(
-			occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
-			new YawMode(), body)
+			synchronized(multirotorClient) { 
+				multirotorClient.moveByVelocityAsync(
+					occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
+					new YawMode(), body)
+			}
 		]
 	}
 
@@ -140,15 +145,15 @@ agent SimulationControllerAgent {
 	on SetVehiclePose {
 		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a,n|onAffectation(a,n)])
 		influenceReactionStrategy.influenceReceived(occurrence.source) [
-			multirotorClient.simSetVehiclePose(occurrence.pose, true, body)
+			synchronized(multirotorClient) { multirotorClient.simSetVehiclePose(occurrence.pose, true, body) }
 		]
 	}
 	
 	/** Retrieve the perceptions for a single agent */
 	private def retrieveAgentPerceptions(address : Address, name: String) {
-		val state = multirotorClient.getMultirotorState(name)
-		val pose = multirotorClient.simGetObjectPose(name)
-		val kinematics = multirotorClient.simGetGroundTruthKinematics(name)
+		val state = synchronized(multirotorClient) { multirotorClient.getMultirotorState(name) }
+		val pose = synchronized(multirotorClient) { multirotorClient.simGetObjectPose(name) }
+		val kinematics = synchronized(multirotorClient) { multirotorClient.simGetGroundTruthKinematics(name) }
 
 		influenceReactionStrategy.perceptionReceived(address) [
 			emit(new MultirotorStatePerception(state))[it == address]
@@ -157,6 +162,7 @@ agent SimulationControllerAgent {
 		]
 	}
 	
+	
 	/** Retrieve the perceptions for all agents */
 	private def retrievePerceptions {
 		affectationStrategy.affectedBodies.forEach[address, name | retrieveAgentPerceptions(address, name)]
@@ -164,7 +170,7 @@ agent SimulationControllerAgent {
 	
 	private def onAffectation(address : Address, name : String) {
 		info("Received affectation: " + address.UUID + " - " + name)
-		multirotorClient.enableApiControl(true, name)
+		synchronized(multirotorClient) { multirotorClient.enableApiControl(true, name) }
 
 		// Retrieve the initial perceptions for this agent
 		retrieveAgentPerceptions(address, name)
