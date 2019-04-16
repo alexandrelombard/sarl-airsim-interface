@@ -1,0 +1,37 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.behaviors.tests
+
+import io.sarl.airsim.influences.MoveByVelocity
+import io.sarl.airsim.influences.Takeoff
+import io.sarl.airsim.math.Vector3
+import io.sarl.airsim.perceptions.LidarDataPerception
+import io.sarl.airsim.simulation.events.SimulationInitialized
+import io.sarl.core.DefaultContextInteractions
+
+/** 
+ * Test behavior emitting a take off instruction when the simulation is initialized, then moving forward
+ * or stopping according to the lidar
+ * @author Alexandre Lombard
+ * 
+ */
+behavior TakeoffBehavior {
+	uses DefaultContextInteractions
+
+	on SimulationInitialized {
+		emit(new Takeoff)
+	}
+	
+	on LidarDataPerception [minDistance(occurrence.lidarData.pointCloud) < 10.0f] {
+		emit(new MoveByVelocity(new Vector3(0.0f, 0.0f, 0.0f), 0.1f))
+	}
+
+	on LidarDataPerception [minDistance(occurrence.lidarData.pointCloud) >= 10.0f] {
+		emit(new MoveByVelocity(new Vector3(10.0f, 0.0f, 0.0f), 0.1f))
+	}
+	
+	def minDistance(arr: float[]) {
+		return arr.min
+	}
+}
