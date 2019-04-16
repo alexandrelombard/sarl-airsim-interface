@@ -96,11 +96,11 @@ agent SimulationControllerAgent {
 
 		simulationStrategy = fixedStepBlockingSimulationStrategy [
 			retrievePerceptionsBy = [ retrievePerceptions ]
-			pauseBy = [ synchronizedClient [ it.simPause(true) ] ]
+			pauseBy = []
 			canContinueIf = [!influencesPropagated.isLocked ]
 			continueSimulationBy = [
 				influencesPropagated.lock
-				synchronizedClient [ it.simContinueForTime(simulationStepMs) ]
+				synchronizedClient [ it.simContinueForTime(simulationStepMs / 1000.0f) ]
 			]
 		]
 		
