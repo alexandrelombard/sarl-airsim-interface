@@ -14,25 +14,20 @@ import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 class FixedStepBlockingSimulationStrategy implements SimulationStrategy {
 	
 	val retrievePerceptions: Procedure0
-	val pause: Procedure0
 	val continueSimulation: Procedure0
 	val canContinue: () => Boolean
 	
 	new (
 		retrievePerceptions: Procedure0,
-		pause: Procedure0,
 		canContinue: () => Boolean,
 		continueSimulation: Procedure0) {
 		this.retrievePerceptions = retrievePerceptions
-		this.pause = pause
 		this.continueSimulation = continueSimulation
 		this.canContinue = canContinue
 	}
 	
 	@SuppressWarnings("discouraged_reference")
 	def loop {
-		pause.apply
-
 		retrievePerceptions.apply
 
 		while(this.canContinue.apply == false) {
@@ -54,13 +49,12 @@ class FixedStepBlockingSimulationStrategy implements SimulationStrategy {
 
 	static class FixedStepBlockingSimulationStrategyBuilder {
 		public var retrievePerceptionsBy : Procedure0
-		public var pauseBy : Procedure0
 		public var canContinueIf : ()=>Boolean
 		public var continueSimulationBy : Procedure0
 		
 		def build() {
 			return new FixedStepBlockingSimulationStrategy(
-				retrievePerceptionsBy, pauseBy, canContinueIf, continueSimulationBy)
+				retrievePerceptionsBy, canContinueIf, continueSimulationBy)
 		}
 	}
 }

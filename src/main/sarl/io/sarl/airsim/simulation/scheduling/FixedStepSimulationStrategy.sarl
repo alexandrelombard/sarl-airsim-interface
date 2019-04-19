@@ -15,21 +15,16 @@ import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 class FixedStepSimulationStrategy implements SimulationStrategy {
 	
 	val retrievePerceptions: Procedure0
-	val pause: Procedure0
 	val continueSimulation: Procedure0
 	
 	new (
 		retrievePerceptions: Procedure0,
-		pause: Procedure0,
 		continueSimulation: Procedure0) {
 		this.retrievePerceptions = retrievePerceptions
-		this.pause = pause
 		this.continueSimulation = continueSimulation
 	}
 	
 	def loop {
-		pause.apply
-
 		retrievePerceptions.apply
 		
 		continueSimulation.apply
@@ -45,11 +40,10 @@ class FixedStepSimulationStrategy implements SimulationStrategy {
 
 	static class FixedStepSimulationStrategyBuilder {
 		public var retrievePerceptionsBy : Procedure0
-		public var pauseBy : Procedure0
 		public var continueSimulationBy : Procedure0
 
 		def build {
-			return new FixedStepSimulationStrategy(retrievePerceptionsBy, pauseBy, continueSimulationBy)
+			return new FixedStepSimulationStrategy(retrievePerceptionsBy, continueSimulationBy)
 		}
 	}
 
