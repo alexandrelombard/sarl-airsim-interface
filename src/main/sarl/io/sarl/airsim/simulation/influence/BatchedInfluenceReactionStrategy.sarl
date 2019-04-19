@@ -67,18 +67,21 @@ class BatchedInfluenceReactionStrategy implements InfluenceReactionStrategy {
 				// If we drop the old influences, we poll the oldest
 				this.influences.get(source).poll	
 			} else {
-				// If we keep the old influences, we ignore the new one
-				return
+				// If we keep the old influences, we ignore the new one, but we keep evaluating the propagation condition
+				// which needs to be evaluated everytime an influence is emitted
 			}
 		}
 		
 		this.influences.get(source).add(propagate)
 		
-		if (this.influencePropagationCondition.apply(System.currentTimeMillis - this.lastInfluencePropagationTimeMs, this.influences.keySet)) {
-			this.influences.values.forEach[ it.forEach [it.apply] ]
+		if (this.influencePropagationCondition.apply(System.currentTimeMillis - this.lastInfluencePropagationTimeMs,
+			this.influences.keySet)) {
+			this.influences.values.forEach[it.forEach[it.apply]]
 			this.influences.clear
 			this.lastInfluencePropagationTimeMs = System.currentTimeMillis
 			fireInfluencesPropagated
+		} else {
+			// Failed
 		}
 	}
 	
