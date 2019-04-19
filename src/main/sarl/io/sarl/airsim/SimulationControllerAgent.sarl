@@ -33,6 +33,7 @@ import io.sarl.airsim.simulation.events.IsSimulationInitialized
 import org.eclipse.xtext.xbase.lib.Functions.Function2
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
+import io.sarl.airsim.simulation.influence.InfluenceReactionStrategy
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -64,8 +65,7 @@ agent SimulationControllerAgent {
 	/** The influence/reaction strategy defining when influence and perceptions should be propagated */
 //	var influenceReactionStrategy = new DirectInfluenceReactionStrategy()
 	/** Perceptions are propagated as soon as they are received, influences as soon as every one has sent one and eventually if the delay is respected */
-	var influenceReactionStrategy = new BatchedInfluenceReactionStrategy(
-			[t, p|true], [t, i|i.size >= affectationStrategy.affectedBodiesCount], 2, false)
+	var influenceReactionStrategy : BatchedInfluenceReactionStrategy
 	
 	// Attributes used to access AirSim API
 	val loop = EventLoop.defaultEventLoop()
@@ -84,30 +84,37 @@ agent SimulationControllerAgent {
 		
 		// We enable the API control for all bodies of the pool (even if they are not affected later)
 		pool.forEach[val name = it synchronizedClient(name)[multirotorClient.enableApiControl(true, name)]]
-		
+
 		// At the beginning we started paused
 		synchronizedClient [it.simPause(true)]
 
 		val influencesPropagated = new ActiveWaitLock()
+		
+		this.influenceReactionStrategy = new BatchedInfluenceReactionStrategy(
+			[t, p|true], [ t, i |
+				/*(t > 3000 || influencesPropagated.isLocked) && */i.size >= affectationStrategy.affectedBodiesCount
+		], 2, false)
+
 		influenceReactionStrategy.onInfluencesPropagated[
-			// info("Influences propagated...")
+			debug("Influences propagated...")
 			influencesPropagated.unlock
 		]
 
 		simulationStrategy = fixedStepBlockingSimulationStrategy [
 			retrievePerceptionsBy = [ retrievePerceptions ]
-			pauseBy = []
-			canContinueIf = [!influencesPropagated.isLocked ]
+			canContinueIf = [!influencesPropagated.isLocked]
 			continueSimulationBy = [
+				debug("Continuing simulation (begin)...")
+				synchronizedClient [it.simContinueForTime(simulationStepMs / 1000.0f)]
+				//Thread.sleep(2000)
 				influencesPropagated.lock
-				synchronizedClient [ it.simContinueForTime(simulationStepMs / 1000.0f) ]
+				debug("Continuing simulation (end)...")
 			]
 		]
 		
 //		simulationStrategy = fixedStepSimulationStrategy [
 //			retrievePerceptionsBy = [ retrievePerceptions ]
-//			pauseBy = [ multirotorClient.simPause(true) ]
-//			continueSimulationBy = [multirotorClient.simContinueForTime(simulationStepMs) ]
+//			continueSimulationBy = [multirotorClient.simContinueForTime(simulationStepMs / 1000.0f) ]
 //		]
 		
 		// Schedule the loop
@@ -132,6 +139,7 @@ agent SimulationControllerAgent {
 	 * When a drone emits the move-by-velocity instruction, transfers it to AirSim
 	 */
 	on MoveByVelocity {
+		debug("MoveByVelocity (begin)")
 		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
 		influenceReactionStrategy.influenceReceived(occurrence.source) [
 			synchronizedClient(body) [
@@ -140,6 +148,7 @@ agent SimulationControllerAgent {
 					new YawMode(), body)
 			]
 		]
+		debug("MoveByVelocity (end)")
 	}
 
 	/** 
@@ -168,17 +177,17 @@ agent SimulationControllerAgent {
 	private def synchronizedClient(target : String = "", operation : Procedure1<MultirotorClientInterface>) {
 		var success = false
 
-		while (!success) {
-			try {
+		//while (!success) {
+		//	try {
 				synchronized (multirotorClient) {
 					operation.apply(multirotorClient)
 					return
 				}
-			} catch (e : org.msgpack.rpc.error.RemoteError) {
-				warning("An exception occurred: " + e.message + " ; Trying to re-enable API control...")
-				multirotorClient.enableApiControl(true, target)
-			}
-		}
+		//	} catch (e : org.msgpack.rpc.error.RemoteError) {
+		//		warning("An exception occurred: " + e.message + " ; Trying to re-enable API control...")
+		//		multirotorClient.enableApiControl(true, target)
+		//	}
+		//}
 	}
 	
 	private def <T> synchronizedClient(target: String = "", operation: Function1<MultirotorClientInterface, T>) : T {
