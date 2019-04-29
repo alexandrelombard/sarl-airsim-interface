@@ -16,7 +16,7 @@ agent BootAgent {
 	uses Lifecycle
 	
 	/** The total number of agents to spawn */
-	val agentToSpawn = 10
+	val agentToSpawn = 2
 
 	on Initialize {
 		// Run the drone spawning strategy

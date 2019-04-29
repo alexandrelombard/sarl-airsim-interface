@@ -1,0 +1,130 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.behaviors.target
+
+import fr.utbm.airsim.api.Pose
+import fr.utbm.airsim.api.Vector3r
+import io.sarl.airsim.communication.NotifyKinematics
+import io.sarl.airsim.communication.NotifyPose
+import io.sarl.airsim.influences.sim.SetVehiclePose
+import io.sarl.airsim.math.Vector3
+import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
+import io.sarl.airsim.perceptions.sim.SimPosePerception
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.lang.core.Address
+import java.util.concurrent.ConcurrentHashMap
+
+/** 
+ * Represents the abstract reach target point behavior
+ * @author Alexandre Lombard
+ */
+abstract behavior AbstractReachTargetPoint {
+	
+	uses DefaultContextInteractions
+	
+	// region Goal of the agent
+	protected var targetPoint : Vector3 = null
+	// endregion
+
+	// region Internal state of the agent
+	protected var initialPose : Pose = null
+	protected var initialVelocity : Vector3 = null
+	protected var pose = new Pose()
+	protected var velocity = new Vector3()
+	// endregion
+	
+	// region Data about the state of the other agents
+	protected val neighbours = new ConcurrentHashMap<Address, ExternalDroneState>
+	// endregion
+
+	/** 
+	 * When the pose of another agent is received, we register it in the map of neighbours
+	 */
+	on NotifyPose [!isMe(occurrence.source)] {
+		if (neighbours.containsKey(occurrence.source)) {
+			neighbours.put(occurrence.source,
+				new ExternalDroneState(neighbours.get(occurrence.source), occurrence.pose))
+		} else {
+			neighbours.put(occurrence.source, new ExternalDroneState(occurrence.pose, null))
+		}
+	}
+
+	/** 
+	 * When the kinematic state of another agent is received, we register it in the map of neighbours
+	 */
+	on NotifyKinematics [!isMe(occurrence.source)] {
+		if (neighbours.containsKey(occurrence.source)) {
+			neighbours.put(occurrence.source,
+				new ExternalDroneState(neighbours.get(occurrence.source), occurrence.state))
+		} else {
+			val nullPose: Pose = null
+			neighbours.put(occurrence.source, new ExternalDroneState(nullPose, occurrence.state))
+		}
+	}
+
+	/**
+	 * When a ground truth kinematics perception is received, the velocity is updated and the other agents are notified 
+	 */
+	on SimGroundTruthKinematicsPerception {
+		// Update the internal velocity state
+		val newVelocity = occurrence.state.linearVelocity.toVector3
+		
+		this.velocity = newVelocity
+
+		if (this.initialVelocity === null)
+			this.initialVelocity = newVelocity
+
+		emit(new NotifyKinematics(occurrence.state))
+	}
+
+	/**
+	 * When a pose perception is received, update the internal state and notify other agents
+	 */
+	on SimPosePerception {
+		// Update the internal pose state and fix the target point if not set
+		val newPose = occurrence.pose
+		this.pose = newPose
+
+		if (this.initialPose === null)
+			this.initialPose = newPose
+
+		emit(new NotifyPose(newPose))
+	}
+
+	/** 
+	 * Utility function to reset the position of the drone
+	 */
+	def reset() {
+		emit(new SetVehiclePose(this.initialPose))
+	}
+
+	/**
+	 * Utility extension function to convert a Vector3r (from AirSim API) to a Vector3 (SARL)
+	 */
+	def toVector3(v: Vector3r) {
+		return new Vector3(v.x, v.y, v.z)
+	}
+	
+	/**
+	 * Computes the sliding scale (exponentially decreasing according to the collision time t)
+	 * @param t the time before potential collision
+	 * @param alpha a scaling value (a bigger value will cause a bigger scale)
+	 * @param tau a time factor: if tau increases, the sliding scale will increase faster when t decreases
+	 */
+	def computeSlidingScale(t: Float, offset: Float = 0.25f, alpha: Float = 2f, tau: Float = 8f) {
+		return (alpha - offset) * Math.exp(-t / tau) + offset
+	}
+	
+	/**
+	 * Computes the attraction force given the target direction and the sliding scale
+	 * @param targetDirection the direction to the target
+	 * @param slidingScale the current sliding scale
+	 * @param w scaling factor on the attraction (the bigger it is, the bigger the attraction is)
+	 * @param alpha if alpha is small the relative importance of the sliding scale will quickly decrease
+	 */
+	def computeAttraction(targetDirection: Vector3, slidingScale: Float, w: Float = 10.0f, alpha: Float = 2.0f) {
+		val delta = if(slidingScale < 1e-7f) 1f else 1f - Math.exp(-alpha / slidingScale)
+		return targetDirection.normalized.times((w * delta).floatValue)
+	}
+}
