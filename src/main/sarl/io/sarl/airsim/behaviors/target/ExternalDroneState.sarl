@@ -1,0 +1,46 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.behaviors.target
+
+import fr.utbm.airsim.api.Pose
+import fr.utbm.airsim.api.KinematicsState
+
+/** 
+ * Class used to store the state of the other agents
+ * @author Alexandre Lombard
+ */
+class ExternalDroneState {
+	public val pose : Pose
+	public val state : KinematicsState
+
+	/**
+	 * Constructor used to build a state given a pose and a kinematics state
+	 * @param pose the pose
+	 * @param state the kinematics state
+	 */
+	new(pose : Pose, state : KinematicsState) {
+		this.pose = pose
+		this.state = state
+	}
+
+	/**
+	 * Constructor used to compute an updated state from a previous state and a new pose
+	 * @param previousState the previous state
+	 * @param pose the new pose
+	 */
+	new(previousState : ExternalDroneState, pose : Pose) {
+		this.pose = pose
+		this.state = previousState.state
+	}
+
+	/**
+	 * Constructor used to compute an updated state from a previous state and a new kinematics state
+	 * @param previousState the previous state
+	 * @param kinematicsState the new kinematics state 
+	 */
+	new(previousState : ExternalDroneState, kinematicsState : KinematicsState) {
+		this.pose = previousState.pose
+		this.state = kinematicsState
+	}
+}
