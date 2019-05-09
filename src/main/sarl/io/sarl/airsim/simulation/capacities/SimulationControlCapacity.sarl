@@ -1,0 +1,29 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.capacities
+
+/** 
+ * Capacity to control the simulation
+ * @author Alexandre Lombard
+ * 
+ */
+capacity SimulationControlCapacity {
+	/**
+	 * Continue the simulation for the given amount of time
+	 * @param time the time in seconds
+	 */
+	def simContinueForTime(time: Float)
+	
+	/**
+	 * Pauses (or unpauses the simulation)
+	 * @param pause <code>true</code> to pause the simulation, <code>false</code> to unpause the simulation
+	 */
+	def simPause(pause: Boolean)
+	
+	/**
+	 * Returns <code>true</code> if the simulation is paused, <code>false</code> otherwise
+	 * @return <code>true</code> if the simulation is paused, <code>false</code> otherwise
+	 */
+	def simIsPaused(): Boolean
+}

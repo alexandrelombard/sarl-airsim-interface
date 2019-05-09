@@ -34,6 +34,8 @@ import org.eclipse.xtext.xbase.lib.Functions.Function2
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 import io.sarl.airsim.simulation.influence.InfluenceReactionStrategy
+import io.sarl.airsim.simulation.capacities.SimulationControlCapacity
+import io.sarl.airsim.simulation.skills.AirSimSimulationControl
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -48,9 +50,11 @@ import io.sarl.airsim.simulation.influence.InfluenceReactionStrategy
 agent SimulationControllerAgent {
 	
 	uses Logging, DefaultContextInteractions, Schedules
+	
+	uses SimulationControlCapacity
 
 	/** The simulation step */
-	val simulationStepMs = 200.0
+	val simulationStepMs = 200.0f
 
 	val pool = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9")
 	val affectationStrategy =
@@ -73,6 +77,9 @@ agent SimulationControllerAgent {
 	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
 	
 	on Initialize {
+		// Install the simulation control capacity
+		setSkill(new AirSimSimulationControl, SimulationControlCapacity)
+		
 		// Standard scheduling according to the direct influence/reaction strategy (it would also work with Batched but forbidding
 		// influences from being applied immediately is not well-suited with real-time simulation)
 		// Perceptions are retrieved regularly, simulation runs in real-time
@@ -86,7 +93,7 @@ agent SimulationControllerAgent {
 		pool.forEach[val name = it synchronizedClient(name)[multirotorClient.enableApiControl(true, name)]]
 
 		// At the beginning we started paused
-		synchronizedClient [it.simPause(true)]
+		simPause(true)
 
 		val influencesPropagated = new ActiveWaitLock()
 		
@@ -105,7 +112,7 @@ agent SimulationControllerAgent {
 			canContinueIf = [!influencesPropagated.isLocked]
 			continueSimulationBy = [
 				debug("Continuing simulation (begin)...")
-				synchronizedClient [it.simContinueForTime(simulationStepMs / 1000.0f)]
+				simContinueForTime(simulationStepMs / 1000.0f)
 				//Thread.sleep(2000)
 				influencesPropagated.lock
 				debug("Continuing simulation (end)...")
