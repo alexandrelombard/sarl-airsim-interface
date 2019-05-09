@@ -1,0 +1,28 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.capacities
+
+/** 
+ * Capacity to control a multirotor body in the simulation.
+ * This capacity should be given to the simulation controller agent.
+ * @author Alexandre Lombard
+ * 
+ */
+capacity MultirotorSimulationControlCapacity {
+	
+	def takeOff()
+	
+	def land()
+	
+	def goHome()
+	
+	def moveByVelocity(vx : Float, vy : Float, vz : Float)
+	
+	def moveToPosition(x : Float, y : Float, z : Float)
+	
+	def rotateByYawRate(yawRate : Float, duration : Float)
+	
+	def rotateToYawRate(yaw : Float)
+	
+}
