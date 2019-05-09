@@ -36,7 +36,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 	
 	val targetRadius = 1.0f
 	val startupDelayMs = 5000
-	val periodMs = 100
+	val periodMs = 1000
 	val avoidanceRadius = 1.5f
 	val slidingScaling = 1f
 	val attractionFactor = 15f
@@ -173,6 +173,7 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 				val selfDirection = this.velocity
 				val otherPosition = new Vector4(it.pose.position.getX(), it.pose.position.getY(), it.pose.position.getZ(), 0f)
 				val otherDirection = it.state.linearVelocity
+				val otherAcceleration = it.state.linearAcceleration.toVector3
 				
 				// If some data are erroneous, we ignore them
 				if(Float.isNaN(otherPosition.getX()) || Float.isNaN(selfPosition.getX()) || Float.isNaN(otherDirection.getX()) || Float.isNaN(selfDirection.getX()))
@@ -247,9 +248,29 @@ behavior ReachTargetPoint3D extends AbstractReachTargetPoint {
 					val slidingScale = computeSlidingScale(t, 0.25f, 6f, 10f)
 					
 					val sign = 1.0f
-					val slidingVector = slidingDirection * slidingScale.floatValue * sign
+					//val slidingVector = slidingDirection * slidingScale.floatValue * sign
 					
-					return slidingVector
+					
+					// New strategy (the direction of the sliding force tries to minimize the deviation to the goal):
+					val PC = obstacleDirection.toVector3().normalized
+					val T = (targetPoint - selfPosition.toVector3())
+					val ProjPCT = T - PC * (T.dot(PC) / PC.norm)
+					val ProjPCTNormalized = ProjPCT.normalized
+					val slidingVector = ProjPCTNormalized * slidingScale.floatValue
+					
+					// New term: this term tries to make an agent behave differently from the other ones
+					//val ProjOtherDirection = otherDirection.toVector3 - PC * (otherDirection.toVector3.dot(PC) / PC.norm)
+					//val stabilityVector = -ProjOtherDirection.normalized *
+					//(1.0f / 5.0f * Math.pow((otherPosition.toVector3 - selfPosition.toVector3).norm, 2.0).floatValue)
+					// New term: this term introduces a repulsion between agents, the scale depends on the distance
+					//val distance = (otherPosition - selfPosition).norm
+					//val repulsion = (otherPosition - selfPosition).toVector3.normalized * (10.0f / Math.pow(distance, 2).floatValue)
+					// New term: this term introduces an up/down repulsion based on the distance
+					val distance = (otherPosition - selfPosition).norm
+					val upDownRepulsion = new Vector3(0.0f, 0.0f, selfPosition.z - otherPosition.z).normalized *
+					(12.0f / Math.pow(distance, 2.0).floatValue)
+					
+					return slidingVector + upDownRepulsion
 				}
 
 				return new Vector3()

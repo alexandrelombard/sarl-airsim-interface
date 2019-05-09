@@ -50,7 +50,7 @@ agent SimulationControllerAgent {
 	uses Logging, DefaultContextInteractions, Schedules
 
 	/** The simulation step */
-	val simulationStepMs = 100.0
+	val simulationStepMs = 200.0
 
 	val pool = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9")
 	val affectationStrategy =
