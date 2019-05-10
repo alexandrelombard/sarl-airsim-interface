@@ -1,0 +1,31 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.skills.mock
+
+import fr.utbm.airsim.api.CollisionInfo
+import fr.utbm.airsim.api.KinematicsState
+import fr.utbm.airsim.api.Pose
+import io.sarl.airsim.simulation.capacities.SimulationPerceptionCapacity
+
+/** 
+ * Mock for the multirotor simulation perception implementing the corresponding capacity.
+ * The behavior is to return empty and constant perceptions.
+ * @author Alexandre Lombard
+ * 
+ */
+skill MockSimulationPerception implements SimulationPerceptionCapacity {
+	
+	def simGetObjectPose(objectName : String) : Pose {
+		return new Pose()
+	}
+	
+	def simGetCollisionInfo(vehicleName : String) : CollisionInfo {
+		return new CollisionInfo()
+	}
+	
+	def simGetGroundTruthKinematics(vehicleName : String) : KinematicsState {
+		return new KinematicsState()
+	}
+	
+}

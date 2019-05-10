@@ -1,0 +1,21 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.skills.mock
+
+import fr.utbm.airsim.api.MultirotorState
+import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
+
+/** 
+ * Mock for the multirotor simulation perception implementing the corresponding capacity.
+ * The behavior is to return empty and constant perceptions.
+ * @author Alexandre Lombard
+ * 
+ */
+skill MockMultirotorSimulationPerception implements MultirotorSimulationPerceptionCapacity {
+
+	def getMultirotorState(vehicleName : String) : MultirotorState {
+		return new MultirotorState()
+	}
+
+}

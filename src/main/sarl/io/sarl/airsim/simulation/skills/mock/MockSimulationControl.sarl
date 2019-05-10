@@ -1,0 +1,57 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.skills.mock
+
+import io.sarl.airsim.simulation.capacities.SimulationControlCapacity
+import io.sarl.core.Logging
+import io.sarl.core.Schedules
+
+/** 
+ * Mock for the simulation control implementing the corresponding capacity.
+ * Its behavior mainly allows setting the simulation pause state to <code>true</code> or <code>false</code>.
+ * simContinueForTime will change the pause state.
+ * simPrintLogMessage will use the logging capacity. 
+ * @author Alexandre Lombard
+ * 
+ */
+skill MockSimulationControl implements SimulationControlCapacity {
+
+	uses Logging, Schedules
+
+	var paused = false
+	var continuing = false
+
+	def simContinueForTime(time : Float) {
+		synchronized (this) {
+			if (!this.continuing) {
+				val savedPauseState = this.paused
+				this.continuing = true
+				this.paused = false
+				in((time * 1000).longValue) [
+					synchronized (this) {
+						this.paused = savedPauseState
+						this.continuing = true
+					}
+				]
+			}
+		}
+	}
+
+	def simPause(pause : Boolean) {
+		synchronized (this) {
+			this.paused = pause
+		}
+	}
+
+	def simIsPaused : Boolean {
+		synchronized (this) {
+			return this.paused
+		}
+	}
+
+	def simPrintLogMessage(message : String, messageParam : String, severity : Integer = 0) {
+		info(message + " ; " + messageParam + " ; " + severity)
+	}
+
+}
