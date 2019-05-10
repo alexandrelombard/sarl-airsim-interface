@@ -14,12 +14,6 @@ import io.sarl.core.Logging
 import io.sarl.core.Schedules
 import io.sarl.airsim.filters.mean.Vector3MeanFilter
 import io.sarl.airsim.simulation.events.SimulationInitialized
-import io.sarl.airsim.simulation.events.IsSimulationInitialized
-import io.sarl.airsim.requests.RequestSkill
-import io.sarl.airsim.requests.RequestCapacity
-import io.sarl.airsim.SimulationControllerAgent
-import io.sarl.airsim.perceptions.MultirotorStatePerception
-import fr.utbm.airsim.api.LandedState
 import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 
 /** 

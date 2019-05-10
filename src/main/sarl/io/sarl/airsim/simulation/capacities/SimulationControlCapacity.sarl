@@ -27,4 +27,12 @@ capacity SimulationControlCapacity {
 	 * @return <code>true</code> if the simulation is paused, <code>false</code> otherwise
 	 */
 	def simIsPaused(): Boolean
+	
+	/**
+	 * Prints a message in the log of the simulation environment
+	 * @param message the message
+	 * @param messageParam the message parameters
+	 * @param severity the severity (default is 0)
+	 */
+	def simPrintLogMessage(message : String, messageParam : String, severity: Integer = 0)
 }

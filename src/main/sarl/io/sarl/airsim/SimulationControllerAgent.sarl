@@ -6,7 +6,6 @@ package io.sarl.airsim
 import fr.utbm.airsim.api.MultirotorClientInterface
 import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.airsim.influences.Takeoff
-import io.sarl.airsim.influences.sim.SetVehiclePose
 import io.sarl.airsim.perceptions.MultirotorStatePerception
 import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 import io.sarl.airsim.perceptions.sim.SimPosePerception
@@ -26,14 +25,15 @@ import org.msgpack.rpc.loop.EventLoop
 import static io.sarl.airsim.simulation.scheduling.FixedStepSimulationStrategy.fixedStepSimulationStrategy
 import static io.sarl.airsim.simulation.scheduling.FixedStepBlockingSimulationStrategy.fixedStepBlockingSimulationStrategy
 import io.sarl.airsim.simulation.events.SimulationInitialized
-import org.eclipse.xtext.xbase.lib.Functions.Function2
-import org.eclipse.xtext.xbase.lib.Functions.Function1
-import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 import io.sarl.airsim.simulation.influence.InfluenceReactionStrategy
 import io.sarl.airsim.simulation.capacities.SimulationControlCapacity
 import io.sarl.airsim.simulation.skills.airsim.AirSimSimulationControl
 import io.sarl.airsim.simulation.capacities.MultirotorSimulationControlCapacity
 import io.sarl.airsim.simulation.skills.airsim.AirSimMultirotorControl
+import io.sarl.airsim.simulation.capacities.SimulationPerceptionCapacity
+import io.sarl.airsim.simulation.skills.airsim.AirSimSimulationPerception
+import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
+import io.sarl.airsim.simulation.skills.airsim.AirSimMultirotorSimulationPerception
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -50,6 +50,7 @@ agent SimulationControllerAgent {
 	uses Logging, DefaultContextInteractions, Schedules
 	
 	uses SimulationControlCapacity, MultirotorSimulationControlCapacity
+	uses SimulationPerceptionCapacity, MultirotorSimulationPerceptionCapacity
 
 	/** The simulation step */
 	val simulationStepMs = 200.0f
@@ -78,6 +79,8 @@ agent SimulationControllerAgent {
 		// Install the simulation control capacities
 		setSkill(new AirSimSimulationControl, SimulationControlCapacity)
 		setSkill(new AirSimMultirotorControl, MultirotorSimulationControlCapacity)
+		setSkill(new AirSimSimulationPerception, SimulationPerceptionCapacity)
+		setSkill(new AirSimMultirotorSimulationPerception, MultirotorSimulationPerceptionCapacity)
 		
 		// Standard scheduling according to the direct influence/reaction strategy (it would also work with Batched but forbidding
 		// influences from being applied immediately is not well-suited with real-time simulation)
@@ -152,22 +155,12 @@ agent SimulationControllerAgent {
 		]
 		debug("MoveByVelocity (end)")
 	}
-
-	/** 
-	 * When a drone emits the set-vehicle-pose instruction, transfers it to AirSim
-	 */
-	on SetVehiclePose {
-		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a,n|onAffectation(a,n)])
-		influenceReactionStrategy.influenceReceived(occurrence.source) [
-			synchronizedClient(body) [ it.simSetVehiclePose(occurrence.pose, true, body) ]
-		]
-	}
 	
 	/** Retrieve the perceptions for a single agent */
 	private def retrieveAgentPerceptions(address : Address, name: String) {
-		val state = synchronizedClient(name) [ it.getMultirotorState(name) ]
-		val pose = synchronizedClient(name) [ it.simGetObjectPose(name) ]
-		val kinematics = synchronizedClient(name) [ it.simGetGroundTruthKinematics(name) ]
+		val state = name.multirotorState
+		val pose = name.simGetObjectPose
+		val kinematics = name.simGetGroundTruthKinematics
 
 		influenceReactionStrategy.perceptionReceived(address) [
 			emit(new MultirotorStatePerception(state))[it == address]
@@ -175,38 +168,6 @@ agent SimulationControllerAgent {
 			emit(new SimGroundTruthKinematicsPerception(kinematics))[it == address]
 		]
 	}
-
-	private def synchronizedClient(target : String = "", operation : Procedure1<MultirotorClientInterface>) {
-		var success = false
-
-		//while (!success) {
-		//	try {
-				synchronized (multirotorClient) {
-					operation.apply(multirotorClient)
-					return
-				}
-		//	} catch (e : org.msgpack.rpc.error.RemoteError) {
-		//		warning("An exception occurred: " + e.message + " ; Trying to re-enable API control...")
-		//		multirotorClient.enableApiControl(true, target)
-		//	}
-		//}
-	}
-	
-	private def <T> synchronizedClient(target: String = "", operation: Function1<MultirotorClientInterface, T>) : T {
-		var success = false
-		
-		while (!success) {
-			try {
-				return synchronized(multirotorClient) { operation.apply(multirotorClient) }
-			} catch (e : org.msgpack.rpc.error.RemoteError) {
-				warning("An exception occurred: " + e.message + " ; Trying to re-enable API control...")
-				target.enableControl
-			}
-		}
-		
-		return null
-	}
-	
 	
 	/** Retrieve the perceptions for all agents */
 	private def retrievePerceptions {

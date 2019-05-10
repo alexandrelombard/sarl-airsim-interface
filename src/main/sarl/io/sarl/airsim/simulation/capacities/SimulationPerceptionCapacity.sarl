@@ -1,0 +1,36 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.capacities
+
+import fr.utbm.airsim.api.Pose
+import fr.utbm.airsim.api.CollisionInfo
+import fr.utbm.airsim.api.KinematicsState
+
+/** 
+ * The capacity to perceive the simulation state (not through sensors, but like an omniscient god) 
+ * @author Alexandre Lombard
+ * 
+ */
+capacity SimulationPerceptionCapacity {
+	/**
+	 * Gets the position of the given object
+	 * @param objectName the name of the object
+	 * @return the object's pose
+	 */
+	def simGetObjectPose(objectName : String) : Pose
+	
+	/**
+	 * Gets the collision info for the given vehicle
+	 * @param vehicleName the name of the vehicle
+	 * @return the collision info
+	 */
+	def simGetCollisionInfo(vehicleName : String) : CollisionInfo
+	
+	/**
+	 * Gets the ground truth kinematics state for the given vehicle
+	 * @param vehicleName the name of the vehicle
+	 * @return the kinematics state
+	 */
+	def simGetGroundTruthKinematics(vehicleName : String) : KinematicsState
+}

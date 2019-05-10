@@ -1,0 +1,22 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.capacities
+
+import fr.utbm.airsim.api.MultirotorState
+
+/** 
+ * Capacity to perceive the state of a multirotor object
+ * @author Alexandre Lombard
+ * 
+ */
+capacity MultirotorSimulationPerceptionCapacity {
+	
+	/**
+	 * Gets the state of the given multirotor object
+	 * @param vehicleName the name of the vehicle
+	 * @return the state of the vehicle
+	 */
+	def getMultirotorState(vehicleName : String) : MultirotorState
+	
+}

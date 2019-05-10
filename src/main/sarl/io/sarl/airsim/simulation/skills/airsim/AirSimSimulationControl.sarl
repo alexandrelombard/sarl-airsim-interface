@@ -46,4 +46,10 @@ skill AirSimSimulationControl implements SimulationControlCapacity {
 		}
 	}
 	
+	override simPrintLogMessage(message : String, messageParam : String, severity : Integer = 0) {
+		synchronized (rpcLibClient) {
+			rpcLibClient.simPrintLogMessage(message, messageParam, severity)
+		}
+	}
+	
 }
