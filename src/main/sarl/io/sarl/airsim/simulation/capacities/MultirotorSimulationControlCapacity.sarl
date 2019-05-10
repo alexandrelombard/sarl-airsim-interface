@@ -12,6 +12,12 @@ package io.sarl.airsim.simulation.capacities
 capacity MultirotorSimulationControlCapacity {
 	
 	/**
+	 * A method to call in order to enable the control of the vehicle
+	 * @param vehicleName the name of the vehicle to control 
+	 */
+	def enableControl(vehicleName : String)
+	
+	/**
 	 * Take-off order for the given vehicle
 	 * @param vehicleName the identifier of the vehicle
 	 */

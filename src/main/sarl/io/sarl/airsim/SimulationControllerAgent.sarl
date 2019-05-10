@@ -3,9 +3,7 @@
  */
 package io.sarl.airsim
 
-import fr.utbm.airsim.api.DrivetrainType
 import fr.utbm.airsim.api.MultirotorClientInterface
-import fr.utbm.airsim.api.YawMode
 import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.airsim.influences.Takeoff
 import io.sarl.airsim.influences.sim.SetVehiclePose
@@ -28,8 +26,6 @@ import org.msgpack.rpc.loop.EventLoop
 import static io.sarl.airsim.simulation.scheduling.FixedStepSimulationStrategy.fixedStepSimulationStrategy
 import static io.sarl.airsim.simulation.scheduling.FixedStepBlockingSimulationStrategy.fixedStepBlockingSimulationStrategy
 import io.sarl.airsim.simulation.events.SimulationInitialized
-import io.sarl.airsim.requests.RequestEvent
-import io.sarl.airsim.simulation.events.IsSimulationInitialized
 import org.eclipse.xtext.xbase.lib.Functions.Function2
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
@@ -93,7 +89,7 @@ agent SimulationControllerAgent {
 		// Perceptions are retrieved only after influences have been applied, simulation runs with fixed steps
 		
 		// We enable the API control for all bodies of the pool (even if they are not affected later)
-		pool.forEach[val name = it synchronizedClient(name)[multirotorClient.enableApiControl(true, name)]]
+		pool.forEach[it.enableControl]
 
 		// At the beginning we started paused
 		simPause(true)
@@ -140,8 +136,8 @@ agent SimulationControllerAgent {
 		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
 		influenceReactionStrategy.influenceReceived(occurrence.source) [
 			info("Propagation of takeoff for " + body)
-			
-			synchronizedClient(body) [ multirotorClient.takeoffAsync(20.0f, body) ]
+
+			body.takeOff
 		]
 	}
 
@@ -152,11 +148,7 @@ agent SimulationControllerAgent {
 		debug("MoveByVelocity (begin)")
 		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
 		influenceReactionStrategy.influenceReceived(occurrence.source) [
-			synchronizedClient(body) [
-				it.moveByVelocityAsync(
-					occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
-					new YawMode(), body)
-			]
+			body.moveByVelocity(occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration)
 		]
 		debug("MoveByVelocity (end)")
 	}
@@ -208,7 +200,7 @@ agent SimulationControllerAgent {
 				return synchronized(multirotorClient) { operation.apply(multirotorClient) }
 			} catch (e : org.msgpack.rpc.error.RemoteError) {
 				warning("An exception occurred: " + e.message + " ; Trying to re-enable API control...")
-				multirotorClient.enableApiControl(true, target)
+				target.enableControl
 			}
 		}
 		
@@ -223,7 +215,8 @@ agent SimulationControllerAgent {
 	
 	private def onAffectation(address : Address, name : String) {
 		info("Received affectation: " + address.UUID + " - " + name)
-		synchronizedClient(name) [ it.enableApiControl(true, name) ]
+		
+		name.enableControl
 
 		// Retrieve the initial perceptions for this agent
 		retrieveAgentPerceptions(address, name)

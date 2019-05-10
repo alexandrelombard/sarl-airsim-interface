@@ -9,6 +9,7 @@ package io.sarl.airsim.simulation.capacities
  * 
  */
 capacity SimulationControlCapacity {
+	
 	/**
 	 * Continue the simulation for the given amount of time
 	 * @param time the time in seconds

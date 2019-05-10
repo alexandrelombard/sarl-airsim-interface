@@ -31,6 +31,12 @@ skill AirSimMultirotorControl implements MultirotorSimulationControlCapacity {
 	def uninstall {
 		//
 	}
+	
+	override enableControl(vehicleName : String) {
+		synchronized (this.rpcLibClient) {
+			rpcLibClient.enableApiControl(true, vehicleName)
+		}
+	}
 
 	override takeOff(vehicleName : String) {
 		synchronized (this.rpcLibClient) {
