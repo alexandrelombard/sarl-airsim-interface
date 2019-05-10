@@ -1,11 +1,10 @@
 /** 
  * 
  */
-package io.sarl.airsim.simulation.skills
+package io.sarl.airsim.simulation.skills.airsim
 
 import fr.utbm.airsim.api.RpcLibClientBase
 import io.sarl.airsim.simulation.capacities.SimulationControlCapacity
-import io.sarl.core.Logging
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
 

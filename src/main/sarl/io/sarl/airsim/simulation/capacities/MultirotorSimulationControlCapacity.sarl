@@ -11,18 +11,56 @@ package io.sarl.airsim.simulation.capacities
  */
 capacity MultirotorSimulationControlCapacity {
 	
-	def takeOff()
-	
-	def land()
-	
-	def goHome()
-	
-	def moveByVelocity(vx : Float, vy : Float, vz : Float)
-	
-	def moveToPosition(x : Float, y : Float, z : Float)
-	
-	def rotateByYawRate(yawRate : Float, duration : Float)
-	
-	def rotateToYawRate(yaw : Float)
+	/**
+	 * Take-off order for the given vehicle
+	 * @param vehicleName the identifier of the vehicle
+	 */
+	def takeOff(vehicleName : String)
+
+	/** 
+	 * Land order for the given vehicle
+	 * @param vehicleName the identifier of the vehicle
+	 */
+	def land(vehicleName : String)
+
+	/** 
+	 * Go-home order for the given vehicle
+	 * @param vehicleName the identifier of the vehicle
+	 */
+	def goHome(vehicleName : String)
+
+	/** 
+	 * Move-by-velocity order for the given vehicle
+	 * @param vehicleName the identifier of the vehicle
+	 * @param vx the velocity along the x axis
+	 * @param vy the velocity along the y axis
+	 * @param vz the velocity along the z axis
+	 * @param duration the duration of the movement in seconds
+	 */
+	def moveByVelocity(vehicleName : String, vx : Float, vy : Float, vz : Float, duration : Float)
+
+	/** 
+	 * Move-to-position order for the given vehicle
+	 * @param vehicleName the identifier of the vehicle
+	 * @param x the x position
+	 * @param y the y position
+	 * @param z the z position
+	 */
+	def moveToPosition(vehicleName : String, x : Float, y : Float, z : Float, velocity: Float)
+
+	/** 
+	 * Rotate-by-yaw-rate order for the given vehicle
+	 * @param vehicleName the identifier of the vehicle
+	 * @param yawRate the yaw rate
+	 * @param duration the duration of the order in seconds
+	 */
+	def rotateByYawRate(vehicleName : String, yawRate : Float, duration : Float)
+
+	/** 
+	 * Rotate-to-yaw order for the given vehicle
+	 * @param vehicleName the identifier of the vehicle
+	 * @param yaw the target yaw angle
+	 */
+	def rotateToYaw(vehicleName: String, yaw : Float)
 	
 }

@@ -1,0 +1,78 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.skills.airsim
+
+import fr.utbm.airsim.api.MultirotorClientInterface
+import io.sarl.airsim.simulation.capacities.MultirotorSimulationControlCapacity
+import org.msgpack.rpc.Client
+import org.msgpack.rpc.loop.EventLoop
+import fr.utbm.airsim.api.DrivetrainType
+import fr.utbm.airsim.api.YawMode
+
+/** 
+ * AirSim implementation of the multirotor simulation control capacity
+ * @author Alexandre Lombard
+ * 
+ */
+skill AirSimMultirotorControl implements MultirotorSimulationControlCapacity {
+
+	// TODO Allow defining parameters
+	val loop = EventLoop.defaultEventLoop()
+	val rpcClient = new Client("127.0.0.1", 41451, loop)
+	val rpcLibClient = rpcClient.proxy(typeof(MultirotorClientInterface))
+	
+	val defaultTimeout = 5.0f
+
+	def install {
+		//
+	}
+
+	def uninstall {
+		//
+	}
+
+	override takeOff(vehicleName : String) {
+		synchronized (this.rpcLibClient) {
+			rpcLibClient.takeoffAsync(defaultTimeout, vehicleName)	
+		}
+	}
+
+	override land(vehicleName : String) {
+		synchronized (this.rpcLibClient) {
+			rpcLibClient.landAsync(defaultTimeout, vehicleName)		
+		}
+	}
+
+	override rotateByYawRate(vehicleName : String, yawRate : Float, duration : Float) {
+		synchronized (this.rpcLibClient) {
+			rpcLibClient.rotateByYawRateAsync(yawRate, duration, vehicleName)	
+		}
+	}
+
+	override rotateToYaw(vehicleName : String, yaw : Float) {
+		synchronized (this.rpcLibClient) {
+			rpcLibClient.rotateToYawAsync(yaw, defaultTimeout, 5.0f, vehicleName)	
+		}
+	}
+
+	override goHome(vehicleName : String) {
+		synchronized (this.rpcLibClient) {
+			rpcLibClient.goHomeAsync(defaultTimeout, vehicleName)	
+		}
+	}
+
+	override moveToPosition(vehicleName : String, x : Float, y : Float, z : Float, velocity: Float) {
+		synchronized (this.rpcLibClient) {
+			rpcLibClient.moveToPositionAsync(x, y, z, velocity, defaultTimeout, DrivetrainType.MAX_DEGREE_OF_FREEDOM,
+				new YawMode(), -1.0f, -1.0f, vehicleName)	
+		}
+	}
+
+	override moveByVelocity(vehicleName : String, vx : Float, vy : Float, vz : Float, duration : Float) {
+		synchronized (this.rpcLibClient) {
+			rpcLibClient.moveByVelocityAsync(vx, vy, vz, duration, DrivetrainType.MAX_DEGREE_OF_FREEDOM, new YawMode(),
+				vehicleName)
+		}
+	}
+}

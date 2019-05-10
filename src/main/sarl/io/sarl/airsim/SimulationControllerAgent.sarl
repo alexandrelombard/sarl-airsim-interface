@@ -35,7 +35,9 @@ import org.eclipse.xtext.xbase.lib.Functions.Function1
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 import io.sarl.airsim.simulation.influence.InfluenceReactionStrategy
 import io.sarl.airsim.simulation.capacities.SimulationControlCapacity
-import io.sarl.airsim.simulation.skills.AirSimSimulationControl
+import io.sarl.airsim.simulation.skills.airsim.AirSimSimulationControl
+import io.sarl.airsim.simulation.capacities.MultirotorSimulationControlCapacity
+import io.sarl.airsim.simulation.skills.airsim.AirSimMultirotorControl
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -51,7 +53,7 @@ agent SimulationControllerAgent {
 	
 	uses Logging, DefaultContextInteractions, Schedules
 	
-	uses SimulationControlCapacity
+	uses SimulationControlCapacity, MultirotorSimulationControlCapacity
 
 	/** The simulation step */
 	val simulationStepMs = 200.0f
@@ -77,8 +79,9 @@ agent SimulationControllerAgent {
 	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
 	
 	on Initialize {
-		// Install the simulation control capacity
+		// Install the simulation control capacities
 		setSkill(new AirSimSimulationControl, SimulationControlCapacity)
+		setSkill(new AirSimMultirotorControl, MultirotorSimulationControlCapacity)
 		
 		// Standard scheduling according to the direct influence/reaction strategy (it would also work with Batched but forbidding
 		// influences from being applied immediately is not well-suited with real-time simulation)
