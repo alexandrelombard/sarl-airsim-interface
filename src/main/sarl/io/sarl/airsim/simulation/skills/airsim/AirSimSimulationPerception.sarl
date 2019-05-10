@@ -10,10 +10,18 @@ import fr.utbm.airsim.api.RpcLibClientBase
 
 skill AirSimSimulationPerception implements SimulationPerceptionCapacity {
 
-	// TODO Allow defining parameters
 	val loop = EventLoop.defaultEventLoop()
-	val rpcClient = new Client("127.0.0.1", 41451, loop)
-	val rpcLibClient = rpcClient.proxy(typeof(RpcLibClientBase))
+	val rpcClient : Client
+	val rpcLibClient : RpcLibClientBase
+	
+	new() {
+		this("127.0.0.1", 41451)		
+	} 
+	
+	new(ipAddress: String, port: Integer) {
+		rpcClient = new Client(ipAddress, port, loop)
+		rpcLibClient = rpcClient.proxy(typeof(RpcLibClientBase)) 
+	}
 
 	def simGetObjectPose(objectName : String) : Pose {
 		synchronized (this.rpcLibClient) {
