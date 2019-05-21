@@ -4,8 +4,8 @@
 package io.sarl.airsim.simulation.events
 
 /** 
- * Event emitted when the simulation has been initialized
+ * Event emitted when the perceptions have been propagated
  * @author Alexandre Lombard
  * 
  */
-event SimulationInitialized
+event PerceptionsPropagated

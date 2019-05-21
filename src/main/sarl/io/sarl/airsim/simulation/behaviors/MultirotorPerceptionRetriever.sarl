@@ -1,0 +1,67 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.behaviors
+
+import io.sarl.core.AgentKilled
+import io.sarl.core.AgentSpawned
+import io.sarl.core.ContextJoined
+import io.sarl.core.ContextLeft
+import io.sarl.core.Destroy
+import io.sarl.core.Initialize
+import io.sarl.core.Logging
+import io.sarl.core.MemberJoined
+import io.sarl.core.MemberLeft
+import io.sarl.lang.core.Address
+import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
+import io.sarl.airsim.simulation.capacities.SimulationPerceptionCapacity
+import io.sarl.airsim.simulation.capacities.AgentBodyAffectationCapacity
+import io.sarl.airsim.perceptions.MultirotorStatePerception
+import io.sarl.airsim.perceptions.sim.SimPosePerception
+import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.airsim.simulation.capacities.PropagatePerceptionsCapacity
+import io.sarl.airsim.simulation.events.RetrievePerceptions
+import io.sarl.airsim.simulation.events.PerceptionsPropagated
+
+/** 
+ * Perception retriever behavior
+ * @author Alexandre Lombard
+ * 
+ */
+behavior MultirotorPerceptionRetriever {
+	uses Logging, DefaultContextInteractions
+	
+	uses MultirotorSimulationPerceptionCapacity, SimulationPerceptionCapacity
+	uses PropagatePerceptionsCapacity
+	uses AgentBodyAffectationCapacity
+	
+	on RetrievePerceptions {
+		retrievePerceptions
+	}
+
+	/** Retrieve the perceptions for a single agent
+	 */
+	private def retrieveAgentPerceptions(address : Address, name : String) {
+		val state = name.multirotorState
+		val pose = name.simGetObjectPose
+		val kinematics = name.simGetGroundTruthKinematics
+		
+		propagatePerception(address) [
+			emit(new MultirotorStatePerception(state))[it == address]
+			emit(new SimPosePerception(pose))[it == address]
+			emit(new SimGroundTruthKinematicsPerception(kinematics))[it == address]
+		]
+	}
+	
+	/** Retrieve the perceptions for all agents
+	 */
+	private def retrievePerceptions {
+		info("Retrieving perceptions for agents...")
+		
+		affectedBodies.forEach[address, name|retrieveAgentPerceptions(address, name)]
+		
+		emit(new PerceptionsPropagated)
+	}
+	
+}

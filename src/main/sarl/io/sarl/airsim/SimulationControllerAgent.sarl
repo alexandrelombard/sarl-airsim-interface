@@ -34,6 +34,21 @@ import io.sarl.airsim.simulation.capacities.SimulationPerceptionCapacity
 import io.sarl.airsim.simulation.skills.airsim.AirSimSimulationPerception
 import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
 import io.sarl.airsim.simulation.skills.airsim.AirSimMultirotorSimulationPerception
+import io.sarl.airsim.simulation.skills.mock.MockSimulationControl
+import io.sarl.airsim.simulation.skills.mock.MockMultirotorControl
+import io.sarl.airsim.simulation.skills.mock.MockSimulationPerception
+import io.sarl.airsim.simulation.skills.mock.MockMultirotorSimulationPerception
+import io.sarl.core.Behaviors
+import io.sarl.airsim.simulation.behaviors.MultirotorInfluenceEmitter
+import io.sarl.airsim.simulation.influence.BatchedInfluenceApplication
+import io.sarl.airsim.simulation.capacities.ApplyInfluenceCapacity
+import io.sarl.airsim.simulation.influence.BatchedPerceptionsPropagation
+import io.sarl.airsim.simulation.capacities.PropagatePerceptionsCapacity
+import io.sarl.airsim.simulation.capacities.AgentBodyAffectationCapacity
+import io.sarl.airsim.simulation.behaviors.MultirotorPerceptionRetriever
+import io.sarl.airsim.simulation.allocation.FcfsFixedSizePoolAgentBodyAffectation
+import io.sarl.airsim.simulation.behaviors.SimulationController
+import io.sarl.airsim.simulation.events.StartSimulation
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and
@@ -47,40 +62,66 @@ import io.sarl.airsim.simulation.skills.airsim.AirSimMultirotorSimulationPercept
  */
 agent SimulationControllerAgent {
 	
-	uses Logging, DefaultContextInteractions, Schedules
+	uses Logging, DefaultContextInteractions, Schedules, Behaviors
 	
-	uses SimulationControlCapacity, MultirotorSimulationControlCapacity
-	uses SimulationPerceptionCapacity, MultirotorSimulationPerceptionCapacity
+//	uses SimulationControlCapacity, MultirotorSimulationControlCapacity
+//	uses SimulationPerceptionCapacity, MultirotorSimulationPerceptionCapacity
 
 	/** The simulation step */
-	val simulationStepMs = 200.0f
+//	val simulationStepMs = 200.0f
 
-	val pool = newLinkedList("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9")
-	val affectationStrategy =
-			new FcfsFixedSizePoolAllocationStrategy([|
-				val pool = pool
-				Collections.shuffle(pool)
-				return pool
-			].apply)
+	uses AgentBodyAffectationCapacity
+
+	val pool = (0 .. 2).map["S" + it].toList
+//	val affectationStrategy =
+//			new FcfsFixedSizePoolAllocationStrategy([|
+//				val pool = pool
+//				Collections.shuffle(pool)
+//				return pool
+//			].apply)
 	
-	var simulationStrategy: SimulationStrategy
+//	var simulationStrategy: SimulationStrategy
 
 	/** The influence/reaction strategy defining when influence and perceptions should be propagated */
 //	var influenceReactionStrategy = new DirectInfluenceReactionStrategy()
 	/** Perceptions are propagated as soon as they are received, influences as soon as every one has sent one and eventually if the delay is respected */
-	var influenceReactionStrategy : BatchedInfluenceReactionStrategy
+//	var influenceReactionStrategy : BatchedInfluenceReactionStrategy
 	
 	// Attributes used to access AirSim API
-	val loop = EventLoop.defaultEventLoop()
-	val rpcClient = new Client("127.0.0.1", 41451, loop)
-	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
+//	val loop = EventLoop.defaultEventLoop()
+//	val rpcClient = new Client("127.0.0.1", 41451, loop)
+//	val multirotorClient = rpcClient.proxy(typeof(MultirotorClientInterface))
 	
 	on Initialize {
 		// Install the simulation control capacities
 		setSkill(new AirSimSimulationControl, SimulationControlCapacity)
 		setSkill(new AirSimMultirotorControl, MultirotorSimulationControlCapacity)
 		setSkill(new AirSimSimulationPerception, SimulationPerceptionCapacity)
-		setSkill(new AirSimMultirotorSimulationPerception, MultirotorSimulationPerceptionCapacity)
+ 		setSkill(new AirSimMultirotorSimulationPerception, MultirotorSimulationPerceptionCapacity)
+//		setSkill(new MockSimulationControl, SimulationControlCapacity)
+//		setSkill(new MockMultirotorControl, MultirotorSimulationControlCapacity)
+//		setSkill(new MockSimulationPerception, SimulationPerceptionCapacity)
+//		setSkill(new MockMultirotorSimulationPerception, MultirotorSimulationPerceptionCapacity)
+		
+		// region New (more agent oriented) simulation management
+		setSkill(new FcfsFixedSizePoolAgentBodyAffectation([|
+			val pool = pool
+			Collections.shuffle(pool)
+			return pool
+		].apply), AgentBodyAffectationCapacity)
+		
+		setSkill(new BatchedInfluenceApplication(
+			[t, i|i.size >= affectedBodiesCount],
+			2,
+			false
+		), ApplyInfluenceCapacity)
+		
+		setSkill(new BatchedPerceptionsPropagation(), PropagatePerceptionsCapacity)
+		
+		registerBehavior(new MultirotorInfluenceEmitter(this))
+		registerBehavior(new MultirotorPerceptionRetriever(this))
+		registerBehavior(new SimulationController(this))
+		// endregion
 		
 		// Standard scheduling according to the direct influence/reaction strategy (it would also work with Batched but forbidding
 		// influences from being applied immediately is not well-suited with real-time simulation)
@@ -92,34 +133,38 @@ agent SimulationControllerAgent {
 		// Perceptions are retrieved only after influences have been applied, simulation runs with fixed steps
 		
 		// We enable the API control for all bodies of the pool (even if they are not affected later)
-		pool.forEach[it.enableControl]
+//		pool.forEach[it.enableControl]
 
 		// At the beginning we started paused
-		simPause(true)
-
-		val influencesPropagated = new ActiveWaitLock()
+//		simPause(true)
 		
-		this.influenceReactionStrategy = new BatchedInfluenceReactionStrategy(
-			[t, p|true], [ t, i |
-				/*(t > 3000 || influencesPropagated.isLocked) && */i.size >= affectationStrategy.affectedBodiesCount
-		], 2, false)
+		emit(new StartSimulation)
 
-		influenceReactionStrategy.onInfluencesPropagated[
-			debug("Influences propagated...")
-			influencesPropagated.unlock
-		]
+//		val influencesPropagated = new ActiveWaitLock()
+		
+//		this.influenceReactionStrategy = new BatchedInfluenceReactionStrategy(
+//			[t, p|true], [ t, i |
+//				/*(t > 3000 || influencesPropagated.isLocked) && */i.size >= affectationStrategy.affectedBodiesCount
+//		], 2, false)
 
-		simulationStrategy = fixedStepBlockingSimulationStrategy [
-			retrievePerceptionsBy = [ retrievePerceptions ]
-			canContinueIf = [!influencesPropagated.isLocked]
-			continueSimulationBy = [
-				debug("Continuing simulation (begin)...")
-				simContinueForTime(simulationStepMs / 1000.0f)
-				//Thread.sleep(2000)
-				influencesPropagated.lock
-				debug("Continuing simulation (end)...")
-			]
-		]
+//		influenceReactionStrategy.onInfluencesPropagated[
+//			debug("Influences propagated...")
+//			influencesPropagated.unlock
+//		]
+
+//		onPerceptionsPropagated [ influencesPropagated.unlock ]
+//
+//		simulationStrategy = fixedStepBlockingSimulationStrategy [
+//			retrievePerceptionsBy = [ retrievePerceptions ]
+//			canContinueIf = [!influencesPropagated.isLocked]
+//			continueSimulationBy = [
+//				debug("Continuing simulation (begin)...")
+//				simContinueForTime(simulationStepMs / 1000.0f)
+//				//Thread.sleep(2000)
+//				influencesPropagated.lock
+//				debug("Continuing simulation (end)...")
+//			]
+//		]
 		
 //		simulationStrategy = fixedStepSimulationStrategy [
 //			retrievePerceptionsBy = [ retrievePerceptions ]
@@ -127,59 +172,59 @@ agent SimulationControllerAgent {
 //		]
 		
 		// Schedule the loop
-		atFixedDelay(simulationStepMs.longValue)[ simulationStrategy.loop ]
+		//atFixedDelay(simulationStepMs.longValue)[ simulationStrategy.loop ]
 		
-		in(2000) [ info("Sending the initialized simulation signal") emit(new SimulationInitialized) ]
+//		in(2000) [ info("Sending the initialized simulation signal") emit(new SimulationInitialized) ]
 	}
 	
 	/**
 	 * When a drone emits the take-off instruction, transfers it to AirSim
 	 */
-	on Takeoff {
-		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
-		influenceReactionStrategy.influenceReceived(occurrence.source) [
-			info("Propagation of takeoff for " + body)
-
-			body.takeOff
-		]
-	}
+//	on Takeoff {
+//		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
+//		influenceReactionStrategy.influenceReceived(occurrence.source) [
+//			info("Propagation of takeoff for " + body)
+//
+//			body.takeOff
+//		]
+//	}
 
 	/** 
 	 * When a drone emits the move-by-velocity instruction, transfers it to AirSim
 	 */
-	on MoveByVelocity {
-		debug("MoveByVelocity (begin)")
-		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
-		influenceReactionStrategy.influenceReceived(occurrence.source) [
-			body.moveByVelocity(occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration)
-		]
-		debug("MoveByVelocity (end)")
-	}
+//	on MoveByVelocity {
+//		debug("MoveByVelocity (begin)")
+//		val body = affectationStrategy.affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
+//		influenceReactionStrategy.influenceReceived(occurrence.source) [
+//			body.moveByVelocity(occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration)
+//		]
+//		debug("MoveByVelocity (end)")
+//	}
 	
 	/** Retrieve the perceptions for a single agent */
-	private def retrieveAgentPerceptions(address : Address, name: String) {
-		val state = name.multirotorState
-		val pose = name.simGetObjectPose
-		val kinematics = name.simGetGroundTruthKinematics
-
-		influenceReactionStrategy.perceptionReceived(address) [
-			emit(new MultirotorStatePerception(state))[it == address]
-			emit(new SimPosePerception(pose))[it == address]
-			emit(new SimGroundTruthKinematicsPerception(kinematics))[it == address]
-		]
-	}
+//	private def retrieveAgentPerceptions(address : Address, name: String) {
+//		val state = name.multirotorState
+//		val pose = name.simGetObjectPose
+//		val kinematics = name.simGetGroundTruthKinematics
+//
+//		influenceReactionStrategy.perceptionReceived(address) [
+//			emit(new MultirotorStatePerception(state))[it == address]
+//			emit(new SimPosePerception(pose))[it == address]
+//			emit(new SimGroundTruthKinematicsPerception(kinematics))[it == address]
+//		]
+//	}
 	
 	/** Retrieve the perceptions for all agents */
-	private def retrievePerceptions {
-		affectationStrategy.affectedBodies.forEach[address, name | retrieveAgentPerceptions(address, name)]
-	}
+//	private def retrievePerceptions {
+//		affectationStrategy.affectedBodies.forEach[address, name | retrieveAgentPerceptions(address, name)]
+//	}
 	
-	private def onAffectation(address : Address, name : String) {
-		info("Received affectation: " + address.UUID + " - " + name)
-		
-		name.enableControl
-
-		// Retrieve the initial perceptions for this agent
-		retrieveAgentPerceptions(address, name)
-	}
+//	private def onAffectation(address : Address, name : String) {
+//		info("Received affectation: " + address.UUID + " - " + name)
+//		
+//		name.enableControl
+//
+//		// Retrieve the initial perceptions for this agent
+//		retrieveAgentPerceptions(address, name)
+//	}
 }

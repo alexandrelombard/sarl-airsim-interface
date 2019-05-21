@@ -1,0 +1,63 @@
+package io.sarl.airsim.simulation.influence
+
+import io.sarl.lang.core.Address
+import java.util.Collection
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingQueue
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
+import io.sarl.airsim.simulation.capacities.ApplyInfluenceCapacity
+import io.sarl.airsim.simulation.capacities.PropagatePerceptionsCapacity
+import io.sarl.airsim.simulation.events.PerceptionsPropagated
+import io.sarl.core.DefaultContextInteractions
+
+/** 
+ * Influences and perceptions are collected, they are propagated only when a condition
+ * has been met.
+ * An agent is able to emit several influences without them being applied immediately. So it can has
+ * several pending influences. If so, they will be all emitted at once later.
+ * The same goes for perceptions.
+ * @author Alexandre Lombard
+ */
+skill BatchedPerceptionsPropagation implements PropagatePerceptionsCapacity {
+	
+	uses DefaultContextInteractions
+
+	val perceptions = new ConcurrentHashMap<Address, BlockingQueue<Procedure0>>
+
+	val perceptionPropagationCondition : (Long, Collection<Address>)=>Boolean
+
+	var lastPerceptionPropagationTimeMs = 0L
+	
+	new () {
+		this([t, p|true])
+	}
+
+	new(perceptionPropagationCondition : (Long, Collection<Address>)=>Boolean) {
+		this.perceptionPropagationCondition = perceptionPropagationCondition
+	}
+
+	def propagatePerception(destination : Address, propagate : Procedure0) {
+		if (!this.perceptions.containsKey(destination))
+			this.perceptions.put(destination, new LinkedBlockingQueue)
+
+		this.perceptions.get(destination).add(propagate)
+
+		if (this.perceptionPropagationCondition.apply(System.currentTimeMillis - this.lastPerceptionPropagationTimeMs,
+			this.perceptions.keySet)) {
+			this.perceptions.values.forEach[it.forEach[it.apply]]
+			this.perceptions.clear
+			this.lastPerceptionPropagationTimeMs = System.currentTimeMillis
+			// firePerceptionsPropagated	// FIXME
+		}
+	}
+
+	def clearPerceptions {
+		this.perceptions.clear
+	}
+	
+	protected def firePerceptionsPropagated() {
+		emit(new PerceptionsPropagated)
+	}
+
+}

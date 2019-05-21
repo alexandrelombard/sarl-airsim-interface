@@ -1,0 +1,22 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.capacities
+
+import io.sarl.lang.core.Address
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
+
+/** 
+ * Capacity to apply influences
+ * @author Alexandre Lombard
+ * 
+ */
+capacity ApplyInfluenceCapacity {
+
+	/**
+	 * This must be called when an influence is received, the influence management parameter specifies
+	 * how the influence should be propagated.
+	 */
+	def applyInfluence(source : Address, propagate : Procedure0)
+	
+}

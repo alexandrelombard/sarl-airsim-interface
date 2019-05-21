@@ -1,0 +1,22 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.capacities
+
+import io.sarl.lang.core.Address
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
+
+/** 
+ * Capacity to retrieve and propagate the perceptions
+ * @author Alexandre Lombard
+ * 
+ */
+capacity PropagatePerceptionsCapacity {
+
+	/** 
+	 * This must be called when a perception is received, the perception management parameter specifies
+	 * how the perception should be propagated.
+	 */
+	def propagatePerception(destination : Address, propagate : Procedure0)
+	
+}

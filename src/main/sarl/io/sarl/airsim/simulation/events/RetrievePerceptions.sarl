@@ -1,0 +1,11 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.events
+
+/** 
+ * Event that should be emitted so the perceptions retriever knows it must retrieve the perceptions
+ * @author Alexandre Lombard
+ * 
+ */
+event RetrievePerceptions

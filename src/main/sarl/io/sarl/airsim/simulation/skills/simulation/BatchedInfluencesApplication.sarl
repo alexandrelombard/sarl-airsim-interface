@@ -1,0 +1,72 @@
+package io.sarl.airsim.simulation.influence
+
+import io.sarl.lang.core.Address
+import java.util.Collection
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingQueue
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
+import io.sarl.airsim.simulation.capacities.ApplyInfluenceCapacity
+import io.sarl.core.Logging
+
+/** 
+ * Influences and perceptions are collected, they are propagated only when a condition
+ * has been met.
+ * An agent is able to emit several influences without them being applied immediately. So it can has
+ * several pending influences. If so, they will be all emitted at once later.
+ * The same goes for perceptions.
+ * @author Alexandre Lombard
+ */
+skill BatchedInfluenceApplication implements ApplyInfluenceCapacity {
+
+	uses Logging
+
+	val influences = new ConcurrentHashMap<Address, BlockingQueue<Procedure0>>
+	
+	val influencePropagationCondition : (Long, Collection<Address>)=>Boolean
+	
+	// region Buffer parameters
+	val influenceBufferSize: int
+	val influenceDropOld: boolean
+	// endregion
+	
+	var lastInfluencePropagationTimeMs = 0L
+	
+	new(influencePropagationCondition : (Long, Collection<Address>)=>Boolean,
+		influenceBufferSize : int = 0, influenceDropOld: boolean = true) {
+		this.influencePropagationCondition = influencePropagationCondition
+		this.influenceBufferSize = influenceBufferSize
+		this.influenceDropOld = influenceDropOld
+	}
+	
+	def applyInfluence(source : Address, propagate : Procedure0) {
+		info("Tic")
+		
+		if(!this.influences.containsKey(source))
+			this.influences.put(source, new LinkedBlockingQueue)
+		
+		// If there are too much influences for a single emitter, we apply the "buffer overflow" policy
+		if (this.influenceBufferSize > 0 && this.influences.get(source).size() >= this.influenceBufferSize) {
+			if (this.influenceDropOld) {
+				// If we drop the old influences, we poll the oldest
+				this.influences.get(source).poll	
+			} else {
+				// If we keep the old influences, we ignore the new one, but we keep evaluating the propagation condition
+				// which needs to be evaluated everytime an influence is emitted
+			}
+		}
+		
+		this.influences.get(source).add(propagate)
+		
+		if (this.influencePropagationCondition.apply(System.currentTimeMillis - this.lastInfluencePropagationTimeMs,
+			this.influences.keySet)) {
+			info("Toc")
+			this.influences.values.forEach[it.forEach[it.apply]]
+			this.influences.clear
+			this.lastInfluencePropagationTimeMs = System.currentTimeMillis
+		} else {
+			// Failed
+		}
+	}
+	
+}

@@ -16,7 +16,7 @@ agent BootAgent {
 	uses Lifecycle
 	
 	/** The total number of agents to spawn */
-	val agentToSpawn = 10
+	val agentToSpawn = 3
 
 	on Initialize {
 		// Run the drone spawning strategy
@@ -27,11 +27,11 @@ agent BootAgent {
 	}
 	
 	def runSpawnStrategy() {
-		Thread.sleep(2000)
+//		Thread.sleep(2000)
 		
 		for (var idx = 0; idx < agentToSpawn; idx++) {
 			spawn(DroneAgent)
-			Thread.sleep((1500 * Math.random()).intValue)
+//			Thread.sleep((1500 * Math.random()).intValue)
 		}
 	}
 }

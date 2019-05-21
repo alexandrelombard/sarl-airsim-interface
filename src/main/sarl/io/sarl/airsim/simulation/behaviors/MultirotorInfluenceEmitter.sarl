@@ -1,0 +1,69 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.behaviors
+
+import io.sarl.core.Destroy
+import io.sarl.core.Initialize
+import io.sarl.core.Logging
+import io.sarl.airsim.influences.Takeoff
+import io.sarl.airsim.influences.MoveByVelocity
+import io.sarl.airsim.simulation.capacities.AgentBodyAffectationCapacity
+import io.sarl.airsim.simulation.capacities.MultirotorSimulationControlCapacity
+import io.sarl.airsim.simulation.capacities.ApplyInfluenceCapacity
+import io.sarl.lang.core.Address
+
+/** 
+ * Influence emitter behavior
+ * @author Alexandre Lombard
+ * 
+ */
+behavior MultirotorInfluenceEmitter {
+	uses Logging
+	
+	uses AgentBodyAffectationCapacity
+	uses ApplyInfluenceCapacity
+	uses MultirotorSimulationControlCapacity
+
+
+	on Initialize {
+		//
+	}
+
+	on Destroy {
+		//
+	}
+
+	/** 
+	 * When a drone emits the take-off instruction, transfers it to AirSim
+	 */
+	on Takeoff {
+		val body = affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
+		applyInfluence(occurrence.source) [
+			info("Propagation of takeoff for " + body)
+
+			body.takeOff
+		]
+	}
+
+	/** 
+	 * When a drone emits the move-by-velocity instruction, transfers it to AirSim
+	 */
+	on MoveByVelocity {
+		info("MoveByVelocity (begin)")
+		val body = affectOrGetBody(occurrence.source, [a, n|onAffectation(a, n)])
+		applyInfluence(occurrence.source) [
+			body.moveByVelocity(occurrence.vx, occurrence.vy, occurrence.vz, occurrence.duration)
+		]
+		info("MoveByVelocity (end)")
+	}
+
+	private def onAffectation(address : Address, name : String) {
+		info("Received affectation: " + address.UUID + " - " + name)
+
+		name.enableControl
+
+		// Retrieve the initial perceptions for this agent
+		//retrieveAgentPerceptions(address, name)
+	}
+}

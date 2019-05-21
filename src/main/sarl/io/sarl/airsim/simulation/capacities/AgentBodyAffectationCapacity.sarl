@@ -1,0 +1,35 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.capacities
+
+import io.sarl.lang.core.Address
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure2
+import java.util.Map
+
+/** 
+ * Capacity to affect an agent to a body
+ * @author Alexandre Lombard
+ * 
+ */
+capacity AgentBodyAffectationCapacity {
+
+	/** 
+	 * Returns the number of affected bodies
+	 */
+	def affectedBodiesCount : Integer
+	
+	/** 
+	 * Returns a view of the affected bodies
+	 */
+	def affectedBodies : Map<Address, String>
+	
+	/** 
+	 * Gets the name of the body for the given agent address. May affect one if there is no current body.
+	 * @param address the address of the agent
+	 * @param onAffectation a callback when an agent is affected (by default it's empty)
+	 * @returns the name of the body if one exists, or <code>null</code> if there is no body for this address
+	 */
+	def affectOrGetBody(address : Address, onAffectation : Procedure2<Address, String> = [a,n|]) : String
+	
+}

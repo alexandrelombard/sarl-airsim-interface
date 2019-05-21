@@ -1,0 +1,11 @@
+/** 
+ * 
+ */
+package io.sarl.airsim.simulation.events
+
+/** 
+ * Event that should be emitted so the controller knows the simulation must be started
+ * @author Alexandre Lombard
+ * 
+ */
+event StartSimulation
