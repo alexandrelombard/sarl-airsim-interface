@@ -4,7 +4,7 @@
 package io.sarl.airsim.simulation.skills.mock
 
 import fr.utbm.airsim.api.MultirotorState
-import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
+import io.sarl.airsim.simulation.multirotor.capacities.MultirotorSimulationPerceptionCapacity
 
 /** 
  * Mock for the multirotor simulation perception implementing the corresponding capacity.

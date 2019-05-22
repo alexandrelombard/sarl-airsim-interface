@@ -1,7 +1,7 @@
 /** 
  * 
  */
-package io.sarl.airsim.simulation.capacities
+package io.sarl.airsim.simulation.multirotor.capacities
 
 import fr.utbm.airsim.api.MultirotorState
 

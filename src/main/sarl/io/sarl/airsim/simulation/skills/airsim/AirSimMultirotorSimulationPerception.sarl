@@ -2,7 +2,7 @@ package io.sarl.airsim.simulation.skills.airsim
 
 import fr.utbm.airsim.api.MultirotorClientInterface
 import fr.utbm.airsim.api.MultirotorState
-import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
+import io.sarl.airsim.simulation.multirotor.capacities.MultirotorSimulationPerceptionCapacity
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
 

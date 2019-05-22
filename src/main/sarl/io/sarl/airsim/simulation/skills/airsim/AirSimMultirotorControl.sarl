@@ -4,7 +4,7 @@
 package io.sarl.airsim.simulation.skills.airsim
 
 import fr.utbm.airsim.api.MultirotorClientInterface
-import io.sarl.airsim.simulation.capacities.MultirotorSimulationControlCapacity
+import io.sarl.airsim.simulation.multirotor.capacities.MultirotorSimulationControlCapacity
 import org.msgpack.rpc.Client
 import org.msgpack.rpc.loop.EventLoop
 import fr.utbm.airsim.api.DrivetrainType

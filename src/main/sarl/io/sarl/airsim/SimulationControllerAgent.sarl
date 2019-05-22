@@ -3,13 +3,9 @@
  */
 package io.sarl.airsim
 
-import io.sarl.airsim.simulation.behaviors.MultirotorInfluenceEmitter
-import io.sarl.airsim.simulation.behaviors.MultirotorPerceptionRetriever
 import io.sarl.airsim.simulation.behaviors.SimulationController
 import io.sarl.airsim.simulation.capacities.AgentBodyAffectationCapacity
 import io.sarl.airsim.simulation.framework.capacities.ApplyInfluenceCapacity
-import io.sarl.airsim.simulation.capacities.MultirotorSimulationControlCapacity
-import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
 import io.sarl.airsim.simulation.framework.capacities.PropagatePerceptionsCapacity
 import io.sarl.airsim.simulation.capacities.SimulationControlCapacity
 import io.sarl.airsim.simulation.capacities.SimulationPerceptionCapacity
@@ -25,6 +21,10 @@ import io.sarl.core.Initialize
 import java.util.Collections
 import io.sarl.airsim.simulation.framework.skills.FcfsFixedSizePoolAgentBodyAffectation
 import io.sarl.airsim.simulation.framework.skills.BatchedPerceptionsPropagation
+import io.sarl.airsim.simulation.multirotor.capacities.MultirotorSimulationControlCapacity
+import io.sarl.airsim.simulation.multirotor.capacities.MultirotorSimulationPerceptionCapacity
+import io.sarl.airsim.simulation.multirotor.behaviors.MultirotorInfluenceEmitter
+import io.sarl.airsim.simulation.multirotor.behaviors.MultirotorPerceptionRetriever
 
 /**
  * Agent in charge of controlling the simulation, transmitting the influences and

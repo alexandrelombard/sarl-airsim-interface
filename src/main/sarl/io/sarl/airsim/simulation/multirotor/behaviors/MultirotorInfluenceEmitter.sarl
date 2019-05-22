@@ -1,7 +1,7 @@
 /** 
  * 
  */
-package io.sarl.airsim.simulation.behaviors
+package io.sarl.airsim.simulation.multirotor.behaviors
 
 import io.sarl.core.Destroy
 import io.sarl.core.Initialize
@@ -9,9 +9,10 @@ import io.sarl.core.Logging
 import io.sarl.airsim.influences.Takeoff
 import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.airsim.simulation.capacities.AgentBodyAffectationCapacity
-import io.sarl.airsim.simulation.capacities.MultirotorSimulationControlCapacity
+
 import io.sarl.airsim.simulation.framework.capacities.ApplyInfluenceCapacity
 import io.sarl.lang.core.Address
+import io.sarl.airsim.simulation.multirotor.capacities.MultirotorSimulationControlCapacity
 
 /** 
  * Influence emitter behavior

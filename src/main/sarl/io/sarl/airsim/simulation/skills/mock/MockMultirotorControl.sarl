@@ -3,7 +3,7 @@
  */
 package io.sarl.airsim.simulation.skills.mock
 
-import io.sarl.airsim.simulation.capacities.MultirotorSimulationControlCapacity
+import io.sarl.airsim.simulation.multirotor.capacities.MultirotorSimulationControlCapacity
 
 /** 
  * Mock for the multirotor control implementing the corresponding capacity.

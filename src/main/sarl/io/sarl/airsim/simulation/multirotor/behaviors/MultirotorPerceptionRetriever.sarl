@@ -1,13 +1,12 @@
 /** 
  * 
  */
-package io.sarl.airsim.simulation.behaviors
+package io.sarl.airsim.simulation.multirotor.behaviors
 
 import io.sarl.airsim.perceptions.MultirotorStatePerception
 import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
 import io.sarl.airsim.perceptions.sim.SimPosePerception
 import io.sarl.airsim.simulation.capacities.AgentBodyAffectationCapacity
-import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
 import io.sarl.airsim.simulation.framework.capacities.PropagatePerceptionsCapacity
 import io.sarl.airsim.simulation.capacities.SimulationPerceptionCapacity
 import io.sarl.airsim.simulation.framework.events.PerceptionsPropagated
@@ -15,6 +14,7 @@ import io.sarl.airsim.simulation.framework.events.RetrievePerceptions
 import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Logging
 import io.sarl.lang.core.Address
+import io.sarl.airsim.simulation.multirotor.capacities.MultirotorSimulationPerceptionCapacity
 
 /** 
  * Perception retriever behavior
