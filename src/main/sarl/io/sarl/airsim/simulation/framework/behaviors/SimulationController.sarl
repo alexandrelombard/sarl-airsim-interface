@@ -4,15 +4,16 @@
 package io.sarl.airsim.simulation.behaviors
 
 import io.sarl.airsim.simulation.capacities.SimulationControlCapacity
-import io.sarl.airsim.simulation.events.PerceptionsPropagated
-import io.sarl.airsim.simulation.events.RetrievePerceptions
-import io.sarl.airsim.simulation.events.StartSimulation
-import io.sarl.airsim.utils.ActiveWaitLock
+import io.sarl.airsim.simulation.framework.events.PerceptionsPropagated
+import io.sarl.airsim.simulation.framework.events.RetrievePerceptions
+import io.sarl.airsim.simulation.framework.events.StartSimulation
+import io.sarl.airsim.simulation.framework.events.SimulationInitialized
+import io.sarl.airsim.simulation.framework.utils.ActiveWaitLock
 import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Logging
 
-import static io.sarl.airsim.simulation.scheduling.FixedStepBlockingSimulationStrategy.fixedStepBlockingSimulationStrategy
-import static io.sarl.airsim.simulation.scheduling.RealTimeSimulationStrategy.realTimeSimulationStrategy
+import static io.sarl.airsim.simulation.framework.scheduling.FixedStepBlockingSimulationStrategy.fixedStepBlockingSimulationStrategy
+import static io.sarl.airsim.simulation.framework.scheduling.RealTimeSimulationStrategy.realTimeSimulationStrategy
 
 import io.sarl.core.Schedules
 
@@ -43,21 +44,21 @@ behavior SimulationController {
 			continueSimulationBy = [
 				info("Continuing simulation (begin)...")
 				simContinueForTime(simulationStepMs / 1000.0f)
-				// Thread.sleep(2000)
+				Thread.sleep(simulationStepMs.longValue)
 				influencesPropagated.lock
 				info("Continuing simulation (end)...")
 			]
 		]
-
-		atFixedDelay(simulationStepMs.longValue)[ simulationStrategy.loop ]
 
 //		simPause(false)
 //
 //		val simulationStrategy = realTimeSimulationStrategy [
 //			retrievePerceptionsBy = [ retrievePerceptions ]
 //		]
-//
-//		atFixedDelay(simulationStepMs.longValue) [simulationStrategy.loop]
+
+		atFixedDelay(simulationStepMs.longValue) [simulationStrategy.loop]
+		
+		emit(new SimulationInitialized)
 	}
 	
 	on PerceptionsPropagated {

@@ -10,7 +10,7 @@ import io.sarl.airsim.influences.Takeoff
 import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.airsim.simulation.capacities.AgentBodyAffectationCapacity
 import io.sarl.airsim.simulation.capacities.MultirotorSimulationControlCapacity
-import io.sarl.airsim.simulation.capacities.ApplyInfluenceCapacity
+import io.sarl.airsim.simulation.framework.capacities.ApplyInfluenceCapacity
 import io.sarl.lang.core.Address
 
 /** 

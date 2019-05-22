@@ -1,7 +1,7 @@
 /** 
  * 
  */
-package io.sarl.airsim.simulation.capacities
+package io.sarl.airsim.simulation.framework.capacities
 
 import io.sarl.lang.core.Address
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure0

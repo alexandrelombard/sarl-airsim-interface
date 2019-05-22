@@ -1,15 +1,14 @@
-package io.sarl.airsim.simulation.influence
+package io.sarl.airsim.simulation.framework.skills
 
+import io.sarl.airsim.simulation.framework.capacities.PropagatePerceptionsCapacity
+import io.sarl.airsim.simulation.framework.events.PerceptionsPropagated
+import io.sarl.core.DefaultContextInteractions
 import io.sarl.lang.core.Address
 import java.util.Collection
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
-import io.sarl.airsim.simulation.capacities.ApplyInfluenceCapacity
-import io.sarl.airsim.simulation.capacities.PropagatePerceptionsCapacity
-import io.sarl.airsim.simulation.events.PerceptionsPropagated
-import io.sarl.core.DefaultContextInteractions
 
 /** 
  * Influences and perceptions are collected, they are propagated only when a condition

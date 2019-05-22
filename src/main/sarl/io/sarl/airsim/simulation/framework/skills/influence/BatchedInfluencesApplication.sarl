@@ -1,13 +1,12 @@
-package io.sarl.airsim.simulation.influence
+package io.sarl.airsim.simulation.framework.skills.influence
 
+import io.sarl.airsim.simulation.framework.capacities.ApplyInfluenceCapacity
 import io.sarl.lang.core.Address
 import java.util.Collection
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure0
-import io.sarl.airsim.simulation.capacities.ApplyInfluenceCapacity
-import io.sarl.core.Logging
 
 /** 
  * Influences and perceptions are collected, they are propagated only when a condition
@@ -18,8 +17,6 @@ import io.sarl.core.Logging
  * @author Alexandre Lombard
  */
 skill BatchedInfluenceApplication implements ApplyInfluenceCapacity {
-
-	uses Logging
 
 	val influences = new ConcurrentHashMap<Address, BlockingQueue<Procedure0>>
 	
@@ -39,9 +36,7 @@ skill BatchedInfluenceApplication implements ApplyInfluenceCapacity {
 		this.influenceDropOld = influenceDropOld
 	}
 	
-	def applyInfluence(source : Address, propagate : Procedure0) {
-		info("Tic")
-		
+	def applyInfluence(source : Address, propagate : Procedure0) {	
 		if(!this.influences.containsKey(source))
 			this.influences.put(source, new LinkedBlockingQueue)
 		
@@ -60,7 +55,6 @@ skill BatchedInfluenceApplication implements ApplyInfluenceCapacity {
 		
 		if (this.influencePropagationCondition.apply(System.currentTimeMillis - this.lastInfluencePropagationTimeMs,
 			this.influences.keySet)) {
-			info("Toc")
 			this.influences.values.forEach[it.forEach[it.apply]]
 			this.influences.clear
 			this.lastInfluencePropagationTimeMs = System.currentTimeMillis

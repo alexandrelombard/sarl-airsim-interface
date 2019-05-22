@@ -5,6 +5,7 @@ package io.sarl.airsim
 
 import io.sarl.core.Initialize
 import io.sarl.core.Lifecycle
+import io.sarl.core.Logging
 
 /** 
  * Agent in charge of starting the other agents (initial state)
@@ -13,7 +14,7 @@ import io.sarl.core.Lifecycle
  */
 @SuppressWarnings("discouraged_reference")
 agent BootAgent {
-	uses Lifecycle
+	uses Lifecycle, Logging
 	
 	/** The total number of agents to spawn */
 	val agentToSpawn = 3
@@ -30,6 +31,7 @@ agent BootAgent {
 //		Thread.sleep(2000)
 		
 		for (var idx = 0; idx < agentToSpawn; idx++) {
+			info("Spawning a drone agent...")
 			spawn(DroneAgent)
 //			Thread.sleep((1500 * Math.random()).intValue)
 		}

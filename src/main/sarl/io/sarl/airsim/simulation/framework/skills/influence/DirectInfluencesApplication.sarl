@@ -1,0 +1,19 @@
+package io.sarl.airsim.simulation.framework.skills.influence
+
+import io.sarl.airsim.simulation.framework.capacities.ApplyInfluenceCapacity
+import io.sarl.lang.core.Address
+
+/** 
+ * Using this skill influences are propagated directly.
+ * An agent is able to emit several influences without them being applied immediately. So it can has
+ * several pending influences. If so, they will be all emitted at once later.
+ * The same goes for perceptions.
+ * @author Alexandre Lombard
+ */
+skill DirectInfluencesApplication implements ApplyInfluenceCapacity {
+	
+	def applyInfluence(source : Address, propagate : ()=>void) {
+		propagate.apply
+	}
+	
+}

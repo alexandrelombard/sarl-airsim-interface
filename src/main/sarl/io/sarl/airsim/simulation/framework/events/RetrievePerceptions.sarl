@@ -1,7 +1,7 @@
 /** 
  * 
  */
-package io.sarl.airsim.simulation.events
+package io.sarl.airsim.simulation.framework.events
 
 /** 
  * Event that should be emitted so the perceptions retriever knows it must retrieve the perceptions

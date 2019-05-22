@@ -7,7 +7,7 @@ import io.sarl.airsim.influences.MoveByVelocity
 import io.sarl.airsim.influences.Takeoff
 import io.sarl.airsim.math.Vector3
 import io.sarl.airsim.perceptions.LidarDataPerception
-import io.sarl.airsim.simulation.events.SimulationInitialized
+import io.sarl.airsim.simulation.framework.events.SimulationInitialized
 import io.sarl.core.DefaultContextInteractions
 
 /** 

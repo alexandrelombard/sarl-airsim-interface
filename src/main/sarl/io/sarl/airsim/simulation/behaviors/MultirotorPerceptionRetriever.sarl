@@ -3,26 +3,18 @@
  */
 package io.sarl.airsim.simulation.behaviors
 
-import io.sarl.core.AgentKilled
-import io.sarl.core.AgentSpawned
-import io.sarl.core.ContextJoined
-import io.sarl.core.ContextLeft
-import io.sarl.core.Destroy
-import io.sarl.core.Initialize
-import io.sarl.core.Logging
-import io.sarl.core.MemberJoined
-import io.sarl.core.MemberLeft
-import io.sarl.lang.core.Address
-import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
-import io.sarl.airsim.simulation.capacities.SimulationPerceptionCapacity
-import io.sarl.airsim.simulation.capacities.AgentBodyAffectationCapacity
 import io.sarl.airsim.perceptions.MultirotorStatePerception
-import io.sarl.airsim.perceptions.sim.SimPosePerception
 import io.sarl.airsim.perceptions.sim.SimGroundTruthKinematicsPerception
+import io.sarl.airsim.perceptions.sim.SimPosePerception
+import io.sarl.airsim.simulation.capacities.AgentBodyAffectationCapacity
+import io.sarl.airsim.simulation.capacities.MultirotorSimulationPerceptionCapacity
+import io.sarl.airsim.simulation.framework.capacities.PropagatePerceptionsCapacity
+import io.sarl.airsim.simulation.capacities.SimulationPerceptionCapacity
+import io.sarl.airsim.simulation.framework.events.PerceptionsPropagated
+import io.sarl.airsim.simulation.framework.events.RetrievePerceptions
 import io.sarl.core.DefaultContextInteractions
-import io.sarl.airsim.simulation.capacities.PropagatePerceptionsCapacity
-import io.sarl.airsim.simulation.events.RetrievePerceptions
-import io.sarl.airsim.simulation.events.PerceptionsPropagated
+import io.sarl.core.Logging
+import io.sarl.lang.core.Address
 
 /** 
  * Perception retriever behavior
