@@ -131,7 +131,7 @@ If you're using this repository in your research or in your work, please use the
 
     @misc{alombardSarlAirsim19,
         author = {Alexandre Lombard},
-        title = {SARL AirSim interface},
+        title = {S{A}{R}{L} {A}ir{S}im interface},
         year = {2019},
         publisher = {GitHub},
         journal = {GitHub repository},
