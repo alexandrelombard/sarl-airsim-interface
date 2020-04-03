@@ -1,5 +1,7 @@
 # SARL AirSim interface
 
+![SARL Airsim multiagent simulation](https://i.imgur.com/JGREzTo.png "SARL Airsim multiagent simulation")
+
 Example of usage of the AirSim simulation environment with SARL agents.
 
 ## Principles
